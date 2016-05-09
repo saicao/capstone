@@ -1151,7 +1151,6 @@ static int getID(struct InternalInstruction *insn)
 {
 	uint16_t attrMask;
 	uint16_t instructionID;
-	const struct InstructionSpecifier *spec;
 
 	// printf(">>> getID()\n");
 	attrMask = ATTR_NONE;
@@ -1266,6 +1265,8 @@ static int getID(struct InternalInstruction *insn)
 	 * of the AdSize prefix is inverted w.r.t. 32-bit mode.
 	 */
 	if (insn->mode == MODE_16BIT && insn->opcode == 0xE3) {
+		const struct InstructionSpecifier *spec;
+
 		spec = specifierForUID(instructionID);
 
 		/*
