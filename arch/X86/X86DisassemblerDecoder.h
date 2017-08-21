@@ -24,11 +24,11 @@
 #else
 #include <stdio.h>
 #endif
+#if !defined(_MSC_VER) || !defined(_KERNEL_MODE)
 #include <stdint.h>
+#endif
 
 #include "X86DisassemblerDecoderCommon.h"
-
-#include <stdint.h>
 
 /*
  * Accessor functions for various fields of an Intel instruction
@@ -679,8 +679,6 @@ typedef struct InternalInstruction {
   /* The ModR/M byte, which contains most register operands and some portion of
      all memory operands */
   uint8_t                       modRM;
-  /* contains the location (for use with the reader) of the modRM byte */
-  uint64_t                      modRMLocation;
 
   // special data to handle MOVcr, MOVdr, MOVrc, MOVrd
   uint8_t                       firstByte;     // save the first byte in stream

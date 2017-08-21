@@ -20,7 +20,7 @@
 #if !defined(CAPSTONE_HAS_OSXKERNEL)
 #include <ctype.h>
 #endif
-#include "../../myinttypes.h"
+#include <platform.h>
 #if defined(CAPSTONE_HAS_OSXKERNEL)
 #include <libkern/libkern.h>
 #else
@@ -486,18 +486,23 @@ static void printMemOffs64(MCInst *MI, unsigned OpNo, SStream *O)
 	printMemOffset(MI, OpNo, O);
 }
 
+#ifndef CAPSTONE_DIET
 static char *printAliasInstr(MCInst *MI, SStream *OS, void *info);
+#endif
 static void printInstruction(MCInst *MI, SStream *O, MCRegisterInfo *MRI);
+
 void X86_Intel_printInst(MCInst *MI, SStream *O, void *Info)
 {
-	char *mnem;
 	x86_reg reg, reg2;
-
+#ifndef CAPSTONE_DIET
+	char *mnem;
+	
 	// Try to print any aliases first.
 	mnem = printAliasInstr(MI, O, Info);
 	if (mnem)
 		cs_mem_free(mnem);
 	else
+#endif
 		printInstruction(MI, O, Info);
 
 	reg = X86_insn_reg_intel(MCInst_getOpcode(MI));
@@ -582,7 +587,7 @@ static void printPCRelImm(MCInst *MI, unsigned OpNo, SStream *O)
 
 static void printOperand(MCInst *MI, unsigned OpNo, SStream *O)
 {
-	int opsize = 0;
+	uint8_t opsize = 0;
 	MCOperand *Op  = MCInst_getOperand(MI, OpNo);
 
 	if (MCOperand_isReg(Op)) {

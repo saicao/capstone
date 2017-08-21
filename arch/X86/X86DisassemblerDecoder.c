@@ -1096,7 +1096,7 @@ static int getIDWithAttrMask(uint16_t *instructionID,
 
 	hasModRMExtension = modRMRequired(insn->opcodeType,
 			instructionClass,
-			insn->opcode);
+			insn->opcode) != 0;
 
 	if (hasModRMExtension) {
 		if (readModRM(insn))
@@ -1151,6 +1151,7 @@ static int getID(struct InternalInstruction *insn)
 {
 	uint16_t attrMask;
 	uint16_t instructionID;
+	const struct InstructionSpecifier *spec;
 
 	// printf(">>> getID()\n");
 	attrMask = ATTR_NONE;
@@ -1237,9 +1238,9 @@ static int getID(struct InternalInstruction *insn)
 			attrMask |= ATTR_OPSIZE;
 		} else if (isPrefixAtLocation(insn, 0x67, insn->necessaryPrefixLocation)) {
 			attrMask |= ATTR_ADSIZE;
-		} else if (isPrefixAtLocation(insn, 0xf3, insn->necessaryPrefixLocation)) {
+		} else if (insn->mode != MODE_16BIT && isPrefixAtLocation(insn, 0xf3, insn->necessaryPrefixLocation)) {
 			attrMask |= ATTR_XS;
-		} else if (isPrefixAtLocation(insn, 0xf2, insn->necessaryPrefixLocation)) {
+		} else if (insn->mode != MODE_16BIT && isPrefixAtLocation(insn, 0xf2, insn->necessaryPrefixLocation)) {
 			attrMask |= ATTR_XD;
 		}
 	}
@@ -1250,13 +1251,21 @@ static int getID(struct InternalInstruction *insn)
 	if (getIDWithAttrMask(&instructionID, insn, attrMask))
 		return -1;
 
+	/* Fixing CALL and JMP instruction when in 64bit mode and x66 prefix is used */
+	if (insn->mode == MODE_64BIT && insn->isPrefix66 &&
+	   (insn->opcode == 0xE8 || insn->opcode == 0xE9))
+	{
+		attrMask ^= ATTR_OPSIZE;
+		if (getIDWithAttrMask(&instructionID, insn, attrMask))
+			return -1;
+	}
+
+
 	/*
 	 * JCXZ/JECXZ need special handling for 16-bit mode because the meaning
 	 * of the AdSize prefix is inverted w.r.t. 32-bit mode.
 	 */
 	if (insn->mode == MODE_16BIT && insn->opcode == 0xE3) {
-		const struct InstructionSpecifier *spec;
-
 		spec = specifierForUID(instructionID);
 
 		/*
@@ -1514,8 +1523,6 @@ static int readModRM(struct InternalInstruction *insn)
 	if (insn->consumedModRM)
 		return 0;
 
-	insn->modRMLocation = insn->readerCursor;
-
 	if (consumeByte(insn, &insn->modRM))
 		return -1;
 
@@ -1594,6 +1601,7 @@ static int readModRM(struct InternalInstruction *insn)
 					break;
 				case 0x3:
 					insn->eaBase = (EABase)(insn->eaRegBase + rm);
+					insn->eaDisplacement = EA_DISP_NONE;
 					if (readDisplacement(insn))
 						return -1;
 					break;
@@ -1712,8 +1720,8 @@ static int readModRM(struct InternalInstruction *insn)
 		} \
 		switch (type) {                                           \
 			default:                                              \
-				*valid = 0;                                           \
-				return 0;                                             \
+				*valid = 0;                                       \
+				return 0;                                         \
 			case TYPE_Rv:                                         \
 				return (uint8_t)(base + index);                   \
 			case TYPE_R8:                                         \
@@ -1741,20 +1749,24 @@ static int readModRM(struct InternalInstruction *insn)
 			case TYPE_VK1:                                        \
 			case TYPE_VK8:                                        \
 			case TYPE_VK16:                                       \
+				if (index > 7)                                    \
+					*valid = 0;                                   \
 				return prefix##_K0 + index;                       \
 			case TYPE_MM64:                                       \
 			case TYPE_MM32:                                       \
 			case TYPE_MM:                                         \
 				return prefix##_MM0 + (index & 7);                \
 			case TYPE_SEGMENTREG:                                 \
-				return prefix##_ES + (index & 7);                 \
+				if (index > 5)                                    \
+					*valid = 0;                                   \
+				return prefix##_ES + index;                       \
 			case TYPE_DEBUGREG:                                   \
 				if (index > 7)                                    \
 					*valid = 0;                                   \
 				return prefix##_DR0 + index;                      \
 			case TYPE_CONTROLREG:                                 \
 				return prefix##_CR0 + index;                      \
-		}                                                     \
+		}                                                         \
 	}
 
 /*
@@ -2121,6 +2133,9 @@ static bool checkPrefix(struct InternalInstruction *insn)
 				// invalid LOCK
 				return true;
 
+			// nop dword [rax]
+			case X86_NOOPL:
+
 			// DEC
 			case X86_DEC16m:
 			case X86_DEC32m:
@@ -2327,7 +2342,6 @@ int decodeInstruction(struct InternalInstruction *insn,
 	insn->reader = reader;
 	insn->readerArg = readerArg;
 	insn->startLocation = startLoc;
-	insn->modRMLocation = 0;
 	insn->readerCursor = startLoc;
 	insn->mode = mode;
 
@@ -2376,3 +2390,4 @@ int decodeInstruction(struct InternalInstruction *insn,
 }
 
 #endif
+

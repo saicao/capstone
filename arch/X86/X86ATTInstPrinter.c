@@ -21,7 +21,7 @@
 #if !defined(CAPSTONE_HAS_OSXKERNEL)
 #include <ctype.h>
 #endif
-#include "../../myinttypes.h"
+#include <platform.h>
 #if defined(CAPSTONE_HAS_OSXKERNEL)
 #include <libkern/libkern.h>
 #else
@@ -493,7 +493,7 @@ static void printPCRelImm(MCInst *MI, unsigned OpNo, SStream *O)
 
 static void printOperand(MCInst *MI, unsigned OpNo, SStream *O)
 {
-	int opsize = 0;
+	uint8_t opsize = 0;
 	MCOperand *Op  = MCInst_getOperand(MI, OpNo);
 
 	if (MCOperand_isReg(Op)) {
@@ -676,7 +676,7 @@ static void printMemReference(MCInst *MI, unsigned Op, SStream *O)
 	MCOperand *DispSpec = MCInst_getOperand(MI, Op + X86_AddrDisp);
 	MCOperand *SegReg = MCInst_getOperand(MI, Op + X86_AddrSegmentReg);
 	uint64_t ScaleVal;
-	int reg;
+	int segreg;
 
 	if (MI->csh->detail) {
 		MI->flat_insn->detail->x86.operands[MI->flat_insn->detail->x86.op_count].type = X86_OP_MEM;
@@ -689,11 +689,11 @@ static void printMemReference(MCInst *MI, unsigned Op, SStream *O)
 	}
 
 	// If this has a segment register, print it.
-	reg = MCOperand_getReg(SegReg);
-	if (reg) {
+	segreg = MCOperand_getReg(SegReg);
+	if (segreg) {
 		_printOperand(MI, Op + X86_AddrSegmentReg, O);
 		if (MI->csh->detail) {
-			MI->flat_insn->detail->x86.operands[MI->flat_insn->detail->x86.op_count].mem.segment = reg;
+			MI->flat_insn->detail->x86.operands[MI->flat_insn->detail->x86.op_count].mem.segment = segreg;
 		}
 
 		SStream_concat0(O, ":");
@@ -727,6 +727,9 @@ static void printMemReference(MCInst *MI, unsigned Op, SStream *O)
 						SStream_concat(O, "%"PRIu64, DispVal);
 				}
 			}
+		} else {
+			if (segreg)
+				SStream_concat0(O, "0");
 		}
 	}
 
@@ -796,6 +799,15 @@ void X86_ATT_printInst(MCInst *MI, SStream *OS, void *info)
 		cs_mem_free(mnem);
 	else
 		printInstruction(MI, OS, info);
+
+	// HACK TODO: fix this in machine description
+	switch(MI->flat_insn->id) {
+		default: break;
+		case X86_INS_SYSEXIT:
+				 SStream_Init(OS);
+				 SStream_concat0(OS, "sysexit");
+				 break;
+	}
 
 	if (MI->has_imm) {
 		// if op_count > 1, then this operand's size is taken from the destination op

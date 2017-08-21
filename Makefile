@@ -74,6 +74,7 @@ LIBDIRARCH ?= lib
 # Or better, pass 'LIBDIRARCH=lib64' to 'make install/uninstall' via 'make.sh'.
 #LIBDIRARCH ?= lib64
 LIBDIR = $(DESTDIR)$(PREFIX)/$(LIBDIRARCH)
+BINDIR = $(DESTDIR)$(PREFIX)/bin
 
 LIBDATADIR = $(LIBDIR)
 
@@ -326,14 +327,13 @@ PKGCFGF = $(BLDIR)/$(LIBNAME).pc
 
 all: $(LIBRARY) $(ARCHIVE) $(PKGCFGF)
 ifeq (,$(findstring yes,$(CAPSTONE_BUILD_CORE_ONLY)))
+	@V=$(V) CC=$(CC) $(MAKE) -C cstool
 ifndef BUILDDIR
 	cd tests && $(MAKE)
 else
 	cd tests && $(MAKE) BUILDDIR=$(BLDIR)
 endif
-ifeq ($(CAPSTONE_SHARED),yes)
-	$(INSTALL_DATA) $(LIBRARY) $(BLDIR)/tests/
-endif
+	$(call install-library,$(BLDIR)/tests/)
 endif
 
 ifeq ($(CAPSTONE_SHARED),yes)
@@ -346,7 +346,7 @@ else
 endif
 endif
 
-$(LIBOBJ): config.mk
+$(LIBOBJ): *.h include/*.h config.mk
 
 $(LIBOBJ_ARM): $(DEP_ARM)
 $(LIBOBJ_ARM64): $(DEP_ARM64)
@@ -369,7 +369,6 @@ endif
 endif
 
 $(PKGCFGF):
-	@mkdir -p $(@D)
 ifeq ($(V),0)
 	$(call log,GEN,$(@:$(BLDIR)/%=%))
 	@$(generate-pkgcfg)
@@ -379,14 +378,7 @@ endif
 
 install: $(PKGCFGF) $(ARCHIVE) $(LIBRARY)
 	mkdir -p $(LIBDIR)
-ifeq ($(CAPSTONE_SHARED),yes)
-	$(INSTALL_LIB) $(LIBRARY) $(LIBDIR)
-ifneq ($(VERSION_EXT),)
-	cd $(LIBDIR) && \
-	mv lib$(LIBNAME).$(EXT) lib$(LIBNAME).$(VERSION_EXT) && \
-	ln -s lib$(LIBNAME).$(VERSION_EXT) lib$(LIBNAME).$(EXT)
-endif
-endif
+	$(call install-library,$(LIBDIR))
 ifeq ($(CAPSTONE_STATIC),yes)
 	$(INSTALL_DATA) $(ARCHIVE) $(LIBDIR)
 endif
@@ -394,16 +386,20 @@ endif
 	$(INSTALL_DATA) include/*.h $(INCDIR)/$(LIBNAME)
 	mkdir -p $(PKGCFGDIR)
 	$(INSTALL_DATA) $(PKGCFGF) $(PKGCFGDIR)/
+	mkdir -p $(BINDIR)
+	$(INSTALL_LIB) cstool/cstool $(BINDIR)
 
 uninstall:
 	rm -rf $(INCDIR)/$(LIBNAME)
 	rm -f $(LIBDIR)/lib$(LIBNAME).*
 	rm -f $(PKGCFGDIR)/$(LIBNAME).pc
+	rm -f $(BINDIR)/cstool
 
 clean:
 	rm -f $(LIBOBJ)
-	rm -f $(BLDIR)/lib$(LIBNAME).* $(BLDIR)/$(LIBNAME).*
+	rm -f $(BLDIR)/lib$(LIBNAME).* $(BLDIR)/$(LIBNAME).pc
 	rm -f $(PKGCFGF)
+	$(MAKE) -C cstool clean
 
 ifeq (,$(findstring yes,$(CAPSTONE_BUILD_CORE_ONLY)))
 	cd tests && $(MAKE) clean
@@ -433,16 +429,16 @@ dist:
 	git archive --format=zip --prefix=capstone-$(DIST_VERSION)/ $(TAG) > capstone-$(DIST_VERSION).zip
 
 
-TESTS = test test_detail test_arm test_arm64 test_mips test_ppc test_sparc
+TESTS = test_basic test_detail test_arm test_arm64 test_mips test_ppc test_sparc
 TESTS += test_systemz test_x86 test_xcore test_iter
-TESTS += test.static test_detail.static test_arm.static test_arm64.static
+TESTS += test_basic.static test_detail.static test_arm.static test_arm64.static
 TESTS += test_mips.static test_ppc.static test_sparc.static
 TESTS += test_systemz.static test_x86.static test_xcore.static
 TESTS += test_skipdata test_skipdata.static test_iter.static
 check:
 	@for t in $(TESTS); do \
 		echo Check $$t ... ; \
-		./tests/$$t > /dev/null && echo OK || echo FAILED; \
+		LD_LIBRARY_PATH=./tests ./tests/$$t > /dev/null && echo OK || echo FAILED; \
 	done
 
 $(OBJDIR)/%.o: %.c
@@ -452,6 +448,20 @@ ifeq ($(V),0)
 	@$(compile)
 else
 	$(compile)
+endif
+
+
+ifeq ($(CAPSTONE_SHARED),yes)
+define install-library
+	$(INSTALL_LIB) $(LIBRARY) $1
+	$(if $(VERSION_EXT),
+		cd $1 && \
+		mv lib$(LIBNAME).$(EXT) lib$(LIBNAME).$(VERSION_EXT) && \
+		ln -s lib$(LIBNAME).$(VERSION_EXT) lib$(LIBNAME).$(EXT))
+endef
+else
+define install-library
+endef
 endif
 
 

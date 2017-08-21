@@ -19,7 +19,7 @@
 #include <stdio.h>	// DEBUG
 #include <stdlib.h>
 #include <string.h>
-#include "../../myinttypes.h"
+#include <platform.h>
 
 #include "ARMInstPrinter.h"
 #include "ARMAddressingModes.h"
@@ -240,6 +240,8 @@ static name_map insn_update_flgs[] = {
 	{ ARM_INS_SUB, "subs" },
 	{ ARM_INS_UMLAL, "umlals" },
 	{ ARM_INS_UMULL, "umulls" },
+
+	{ ARM_INS_UADD8, "uadd8" },
 };
 
 void ARM_post_printer(csh ud, cs_insn *insn, char *insn_asm, MCInst *mci)
@@ -252,6 +254,7 @@ void ARM_post_printer(csh ud, cs_insn *insn, char *insn_asm, MCInst *mci)
 		insn->detail->arm.writeback = true;
 	} else if (mci->csh->mode & CS_MODE_THUMB) {
 		// handle some special instructions with writeback
+        //printf(">> Opcode = %u\n", mci->Opcode);
 		switch(mci->Opcode) {
 			default:
 				break;
@@ -303,6 +306,7 @@ void ARM_post_printer(csh ud, cs_insn *insn, char *insn_asm, MCInst *mci)
 		}
 	} else {	// ARM mode
 		// handle some special instructions with writeback
+        //printf(">> Opcode = %u\n", mci->Opcode);
 		switch(mci->Opcode) {
 			default:
 				break;
@@ -346,6 +350,7 @@ void ARM_post_printer(csh ud, cs_insn *insn, char *insn_asm, MCInst *mci)
 
 			case ARM_LDRB_POST_IMM:
 			case ARM_LDR_POST_IMM:
+			case ARM_LDR_POST_REG:
 			case ARM_STRB_POST_IMM:
 			case ARM_STR_POST_IMM:
 
@@ -585,6 +590,11 @@ void ARM_printInst(MCInst *MI, SStream *O, void *Info)
 									MI->flat_insn->detail->arm.operands[MI->flat_insn->detail->arm.op_count].type = ARM_OP_REG;
 									MI->flat_insn->detail->arm.operands[MI->flat_insn->detail->arm.op_count].reg = MCOperand_getReg(MCInst_getOperand(MI, 0));
 									MI->flat_insn->detail->arm.op_count++;
+                                    // this instruction implicitly read/write SP register
+                                    MI->flat_insn->detail->regs_read[MI->flat_insn->detail->regs_read_count] = ARM_REG_SP;
+                                    MI->flat_insn->detail->regs_read_count++;
+                                    MI->flat_insn->detail->regs_write[MI->flat_insn->detail->regs_write_count] = ARM_REG_SP;
+                                    MI->flat_insn->detail->regs_write_count++;
 								}
 								SStream_concat0(O, "}");
 								return;
@@ -718,27 +728,27 @@ static void printOperand(MCInst *MI, unsigned OpNo, SStream *O)
 		// add 8 in ARM mode, or 4 in Thumb mode
 		// printf(">> opcode: %u\n", MCInst_getOpcode(MI));
 		if (ARM_rel_branch(MI->csh, opc)) {
+			uint32_t address;
+
 			// only do this for relative branch
 			if (MI->csh->mode & CS_MODE_THUMB) {
-				imm += (int32_t)MI->address + 4;
+				address = (uint32_t)MI->address + 4;
 				if (ARM_blx_to_arm_mode(MI->csh, opc)) {
 					// here need to align down to the nearest 4-byte address
 #define _ALIGN_DOWN(v, align_width) ((v/align_width)*align_width)
-					imm = _ALIGN_DOWN(imm, 4);
+					address = _ALIGN_DOWN(address, 4);
 #undef _ALIGN_DOWN
 				}
 			} else {
-				imm += (int32_t)MI->address + 8;
+				address = (uint32_t)MI->address + 8;
 			}
 
-			if (imm >= 0) {
-				if (imm > HEX_THRESHOLD)
-					SStream_concat(O, "#0x%x", imm);
-				else
-					SStream_concat(O, "#%u", imm);
-			} else {
+			imm += address;
+
+			if (imm > HEX_THRESHOLD)
 				SStream_concat(O, "#0x%x", imm);
-			}
+			else
+				SStream_concat(O, "#%u", imm);
 		} else {
 			switch(MI->flat_insn->id) {
 				default:
@@ -1148,10 +1158,19 @@ static void printPostIdxImm8s4Operand(MCInst *MI, unsigned OpNum, SStream *O)
 {
 	MCOperand *MO = MCInst_getOperand(MI, OpNum);
 	unsigned Imm = (unsigned int)MCOperand_getImm(MO);
-	if (((Imm & 0xff) << 2) > HEX_THRESHOLD)
+
+	if (((Imm & 0xff) << 2) > HEX_THRESHOLD) {
 		SStream_concat(O, "#%s0x%x", ((Imm & 256) ? "" : "-"), ((Imm & 0xff) << 2));
-	else
+	} else {
 		SStream_concat(O, "#%s%u", ((Imm & 256) ? "" : "-"), ((Imm & 0xff) << 2));
+	}
+
+	if (MI->csh->detail) {
+		int v = (Imm & 256) ? ((Imm & 0xff) << 2) : -((((int)Imm) & 0xff) << 2);
+		MI->flat_insn->detail->arm.operands[MI->flat_insn->detail->arm.op_count].type = ARM_OP_IMM;
+		MI->flat_insn->detail->arm.operands[MI->flat_insn->detail->arm.op_count].imm = v;
+		MI->flat_insn->detail->arm.op_count++;
+	}
 }
 
 static void printAddrMode5Operand(MCInst *MI, unsigned OpNum, SStream *O,
@@ -1454,7 +1473,7 @@ static void printMSRMaskOperand(MCInst *MI, unsigned OpNum, SStream *O)
 {
 	MCOperand *Op = MCInst_getOperand(MI, OpNum);
 	unsigned SpecRegRBit = (unsigned)MCOperand_getImm(Op) >> 4;
-	unsigned Mask = MCOperand_getImm(Op) & 0xf;
+	unsigned Mask = (unsigned)MCOperand_getImm(Op) & 0xf;
 	unsigned reg;
 
 	if (ARM_getFeatureBits(MI->csh->mode) & ARM_FeatureMClass) {
@@ -2103,7 +2122,13 @@ static void printT2AddrModeSoRegOperand(MCInst *MI,
 static void printFPImmOperand(MCInst *MI, unsigned OpNum, SStream *O)
 {
 	MCOperand *MO = MCInst_getOperand(MI, OpNum);
+
+#if defined(_KERNEL_MODE)
+	// Issue #681: Windows kernel does not support formatting float point
+	SStream_concat(O, "#<float_point_unsupported>");
+#else
 	SStream_concat(O, "#%e", getFPImmFloat((unsigned int)MCOperand_getImm(MO)));
+#endif
 	if (MI->csh->detail) {
 		MI->flat_insn->detail->arm.operands[MI->flat_insn->detail->arm.op_count].type = ARM_OP_FP;
 		MI->flat_insn->detail->arm.operands[MI->flat_insn->detail->arm.op_count].fp = getFPImmFloat((unsigned int)MCOperand_getImm(MO));
