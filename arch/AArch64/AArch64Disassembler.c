@@ -14,7 +14,7 @@
 //===----------------------------------------------------------------------===//
 
 /* Capstone Disassembly Engine */
-/* By Nguyen Anh Quynh <aquynh@gmail.com>, 2013-2014 */
+/* By Nguyen Anh Quynh <aquynh@gmail.com>, 2013-2015 */
 
 #ifdef CAPSTONE_HAS_ARM64
 
@@ -238,11 +238,11 @@ static DecodeStatus _getInstruction(cs_struct *ud, MCInst *MI,
 			MI->flat_insn->detail->arm64.operands[i].vector_index = -1;
 	}
 
-	if (ud->big_endian)
+	if (MODE_IS_BIG_ENDIAN(ud->mode))
 		insn = (code[3] << 0) | (code[2] << 8) |
-			(code[1] <<  16) | (code[0] <<  24);
+			(code[1] <<  16) | ((uint32_t) code[0] << 24);
 	else
-		insn = (code[3] << 24) | (code[2] << 16) |
+		insn = ((uint32_t) code[3] << 24) | (code[2] << 16) |
 			(code[1] <<  8) | (code[0] <<  0);
 
 	// Calling the auto-generated decoder function.
@@ -703,30 +703,20 @@ static DecodeStatus DecodeMemExtend(MCInst *Inst, unsigned Imm,
 static DecodeStatus DecodeMRSSystemRegister(MCInst *Inst, unsigned Imm,
 		uint64_t Address, void *Decoder)
 {
-	bool ValidNamed;
-	char result[128];
-
-	Imm |= 0x8000;
 	MCOperand_CreateImm0(Inst, Imm);
 
-	A64SysRegMapper_toString(&AArch64_MRSMapper, Imm, &ValidNamed, result);
-
-	return ValidNamed ? Success : Fail;
+	// Every system register in the encoding space is valid with the syntax
+	// S<op0>_<op1>_<Cn>_<Cm>_<op2>, so decoding system registers always succeeds.
+	return Success;
 }
 
 static DecodeStatus DecodeMSRSystemRegister(MCInst *Inst, unsigned Imm,
 		uint64_t Address,
 		void *Decoder)
 {
-	bool ValidNamed;
-	char result[128];
-
-	Imm |= 0x8000;
 	MCOperand_CreateImm0(Inst, Imm);
 
-	A64SysRegMapper_toString(&AArch64_MSRMapper, Imm, &ValidNamed, result);
-
-	return ValidNamed ? Success : Fail;
+	return Success;
 }
 
 static DecodeStatus DecodeFMOVLaneInstruction(MCInst *Inst, unsigned Insn,
@@ -1006,7 +996,7 @@ static DecodeStatus DecodeSignedLdStInstruction(MCInst *Inst,
 	bool IsFP;
 	unsigned Rt = fieldFromInstruction(insn, 0, 5);
 	unsigned Rn = fieldFromInstruction(insn, 5, 5);
-	int64_t offset = fieldFromInstruction(insn, 12, 9);
+	int32_t offset = fieldFromInstruction(insn, 12, 9);
 
 	// offset is a 9-bit signed immediate, so sign extend it to
 	// fill the unsigned.
@@ -1269,7 +1259,7 @@ static DecodeStatus DecodePairLdStInstruction(MCInst *Inst, uint32_t insn,
 	unsigned Rt = fieldFromInstruction(insn, 0, 5);
 	unsigned Rn = fieldFromInstruction(insn, 5, 5);
 	unsigned Rt2 = fieldFromInstruction(insn, 10, 5);
-	int64_t offset = fieldFromInstruction(insn, 15, 7);
+	int32_t offset = fieldFromInstruction(insn, 15, 7);
 	bool IsLoad = fieldFromInstruction(insn, 22, 1) != 0;
 	unsigned Opcode = MCInst_getOpcode(Inst);
 	bool NeedsDisjointWritebackTransfer = false;
@@ -1547,7 +1537,8 @@ static DecodeStatus DecodeAdrInstruction(MCInst *Inst, uint32_t insn,
 		uint64_t Addr, void *Decoder)
 {
 	unsigned Rd = fieldFromInstruction(insn, 0, 5);
-	int64_t imm = fieldFromInstruction(insn, 5, 19) << 2;
+	int32_t imm = fieldFromInstruction(insn, 5, 19) << 2;
+
 	imm |= fieldFromInstruction(insn, 29, 2);
 
 	// Sign-extend the 21-bit immediate.
@@ -1600,7 +1591,7 @@ static DecodeStatus DecodeUnconditionalBranch(MCInst *Inst, uint32_t insn,
 		uint64_t Addr,
 		void *Decoder)
 {
-	int64_t imm = fieldFromInstruction(insn, 0, 26);
+	int32_t imm = fieldFromInstruction(insn, 0, 26);
 
 	// Sign-extend the 26-bit immediate.
 	if (imm & (1 << (26 - 1)))
@@ -1616,11 +1607,11 @@ static DecodeStatus DecodeSystemPStateInstruction(MCInst *Inst,
 		uint32_t insn, uint64_t Addr,
 		void *Decoder)
 {
-	uint64_t op1 = fieldFromInstruction(insn, 16, 3);
-	uint64_t op2 = fieldFromInstruction(insn, 5, 3);
-	uint64_t crm = fieldFromInstruction(insn, 8, 4);
+	uint32_t op1 = fieldFromInstruction(insn, 16, 3);
+	uint32_t op2 = fieldFromInstruction(insn, 5, 3);
+	uint32_t crm = fieldFromInstruction(insn, 8, 4);
 	bool ValidNamed;
-	uint64_t pstate_field = (op1 << 3) | op2;
+	uint32_t pstate_field = (op1 << 3) | op2;
 
 	MCOperand_CreateImm0(Inst, pstate_field);
 	MCOperand_CreateImm0(Inst, crm);
@@ -1633,9 +1624,9 @@ static DecodeStatus DecodeSystemPStateInstruction(MCInst *Inst,
 static DecodeStatus DecodeTestAndBranch(MCInst *Inst, uint32_t insn,
 		uint64_t Addr, void *Decoder)
 {
-	uint64_t Rt = fieldFromInstruction(insn, 0, 5);
-	uint64_t bit = fieldFromInstruction(insn, 31, 1) << 5;
-	int64_t dst = fieldFromInstruction(insn, 5, 14);
+	uint32_t Rt = fieldFromInstruction(insn, 0, 5);
+	uint32_t bit = fieldFromInstruction(insn, 31, 1) << 5;
+	uint32_t dst = fieldFromInstruction(insn, 5, 14);
 
 	bit |= fieldFromInstruction(insn, 19, 5);
 

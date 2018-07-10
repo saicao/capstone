@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 /* Capstone Disassembly Engine */
-/* By Nguyen Anh Quynh <aquynh@gmail.com>, 2013-2014 */
+/* By Nguyen Anh Quynh <aquynh@gmail.com>, 2013-2015 */
 
 #ifdef CAPSTONE_HAS_XCORE
 
@@ -50,7 +50,7 @@ static bool readInstruction32(const uint8_t *code, size_t code_len, uint32_t *in
 		return false;
 
 	// Encoded as a little-endian 32-bit word in the stream.
-	*insn = (code[0] << 0) | (code[1] << 8) | (code[2] << 16) | (code[3] << 24);
+	*insn = (code[0] << 0) | (code[1] << 8) | (code[2] << 16) | ((uint32_t) code[3] << 24);
 	return true;
 }
 

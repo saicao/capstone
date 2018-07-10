@@ -570,8 +570,8 @@ public class Arm64_const {
 	public static final int ARM64_REG_ENDING = 260;
 
 	// alias registers
-	public static final int ARM64_REG_IP1 = ARM64_REG_X16;
-	public static final int ARM64_REG_IP0 = ARM64_REG_X17;
+	public static final int ARM64_REG_IP0 = ARM64_REG_X16;
+	public static final int ARM64_REG_IP1 = ARM64_REG_X17;
 	public static final int ARM64_REG_FP = ARM64_REG_X29;
 	public static final int ARM64_REG_LR = ARM64_REG_X30;
 
@@ -1029,7 +1029,9 @@ public class Arm64_const {
 	public static final int ARM64_INS_DC = 449;
 	public static final int ARM64_INS_AT = 450;
 	public static final int ARM64_INS_TLBI = 451;
-	public static final int ARM64_INS_ENDING = 452;
+	public static final int ARM64_INS_NEGS = 452;
+	public static final int ARM64_INS_NGCS = 453;
+	public static final int ARM64_INS_ENDING = 454;
 
 	// Group of ARM64 instructions
 
@@ -1037,6 +1039,11 @@ public class Arm64_const {
 
 	// Generic groups
 	public static final int ARM64_GRP_JUMP = 1;
+	public static final int ARM64_GRP_CALL = 2;
+	public static final int ARM64_GRP_RET = 3;
+	public static final int ARM64_GRP_INT = 4;
+	public static final int ARM64_GRP_PRIVILEGE = 6;
+	public static final int ARM64_GRP_BRANCH_RELATIVE = 7;
 
 	// Architecture-specific groups
 	public static final int ARM64_GRP_CRYPTO = 128;
