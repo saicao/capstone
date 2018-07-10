@@ -410,8 +410,10 @@ endif
 	$(INSTALL_DATA) include/capstone/*.h $(DESTDIR)$(INCDIR)/$(LIBNAME)
 	mkdir -p $(DESTDIR)$(PKGCFGDIR)
 	$(INSTALL_DATA) $(PKGCFGF) $(DESTDIR)$(PKGCFGDIR)
+ifeq (,$(findstring yes,$(CAPSTONE_BUILD_CORE_ONLY)))
 	mkdir -p $(DESTDIR)$(BINDIR)
 	$(INSTALL_LIB) cstool/cstool $(DESTDIR)$(BINDIR)
+endif
 
 uninstall:
 	rm -rf $(DESTDIR)$(INCDIR)/$(LIBNAME)
