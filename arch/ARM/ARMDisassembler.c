@@ -888,6 +888,30 @@ static DecodeStatus _Thumb_getInstruction(cs_struct *ud, MCInst *MI, const uint8
 		return result;
 	}
 
+	{
+		const char *group = NULL;
+
+		if ((insn32 & 0xfff00fff) == 0xe8d00fef) {
+			group = "ldaex";
+		}
+
+		if ((insn32 & 0xfff00ff0) == 0xe8c00fe0) {
+			group = "stlex";
+		}
+
+		if (group != NULL) {
+			const uint16_t nop = 0x46c0;
+
+			MCInst_clear(MI);
+			result = decodeInstruction_2(DecoderTableThumb16, MI, nop, Address, NULL, ud->mode);
+			MI->unsupported = true;
+			strcpy(MI->assembly, group);
+			*Size = 4;
+
+			return result;
+		}
+	}
+
 	MCInst_clear(MI);
 	*Size = 0;
 	return MCDisassembler_Fail;

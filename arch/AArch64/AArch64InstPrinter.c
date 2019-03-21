@@ -91,6 +91,14 @@ void AArch64_printInst(MCInst *MI, SStream *O, void *Info)
 	int Width;
 	char *mnem;
 
+	if (MI->unsupported) {
+		MCInst_setOpcodePub(MI, ARM64_INS_NOP);
+		SStream_concat0(O, "<bug>\t");
+		SStream_concat0(O, MI->assembly);
+		SStream_concat0(O, " instructions missing in capstone");
+		return;
+	}
+
 	if (Opcode == AArch64_SYSxt && printSysAlias(MI, O))
 		return;
 

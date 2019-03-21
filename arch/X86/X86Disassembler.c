@@ -1026,6 +1026,41 @@ bool X86_getInstruction(csh ud, const uint8_t *code, size_t code_len,
 								return true;
 							}
 						}
+
+						{
+							const char *group = NULL;
+
+							if (b1 == 0xc4 && (b2 & 0x1f) == 0x02 && b3 == 0x7d && b4 == 0x5a) {
+								unsigned char b5 = 0, b6 = 0, b7 = 0;
+
+								if (reader(&info, &b5, address + 4) == 0 && reader(&info, &b6, address + 5) == 0) {
+									if ((b5 & 0xc7) == 0x04 && (b6 & 0xc0) == 0x00) {
+										group = "vbroadcasti128";
+										*size = 6;
+									} else if ((b5 & 0xc7) == 0x44 && (b6 & 0xc7) == 0x05 && reader(&info, &b7, address + 6) == 0 && b7 == 0x00) {
+										group = "vbroadcasti128";
+										*size = 7;
+									}
+								}
+							}
+
+							if (group != NULL) {
+								instr->Opcode = X86_NOOP;
+								instr->OpcodePub = X86_INS_NOP;
+
+								instr->unsupported = true;
+								strcpy(instr->assembly, group);
+
+								if (instr->flat_insn->detail) {
+									instr->flat_insn->detail->x86.opcode[0] = b1;
+									instr->flat_insn->detail->x86.opcode[1] = b2;
+									instr->flat_insn->detail->x86.opcode[2] = b3;
+									instr->flat_insn->detail->x86.opcode[3] = b4;
+								}
+
+								return true;
+							}
+						}
 				}
 				return false;
 		}

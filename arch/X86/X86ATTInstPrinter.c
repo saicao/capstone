@@ -887,6 +887,13 @@ void X86_ATT_printInst(MCInst *MI, SStream *OS, void *info)
 	enum cs_ac_type access1, access2;
 	int i;
 
+	if (MI->unsupported) {
+		SStream_concat0(OS, "<bug>\t");
+		SStream_concat0(OS, MI->assembly);
+		SStream_concat0(OS, " instructions missing in capstone");
+		return;
+	}
+
 	// perhaps this instruction does not need printer
 	if (MI->assembly[0]) {
 		strncpy(OS->buffer, MI->assembly, sizeof(OS->buffer));

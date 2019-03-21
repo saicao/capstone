@@ -739,6 +739,13 @@ void X86_Intel_printInst(MCInst *MI, SStream *O, void *Info)
 	x86_reg reg, reg2;
 	enum cs_ac_type access1, access2;
 
+	if (MI->unsupported) {
+		SStream_concat0(O, "<bug>\t");
+		SStream_concat0(O, MI->assembly);
+		SStream_concat0(O, " instructions missing in capstone");
+		return;
+	}
+
 	// perhaps this instruction does not need printer
 	if (MI->assembly[0]) {
 		strncpy(O->buffer, MI->assembly, sizeof(O->buffer));

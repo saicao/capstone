@@ -252,6 +252,27 @@ static DecodeStatus _getInstruction(cs_struct *ud, MCInst *MI,
 		return result;
 	}
 
+	{
+		const char *group = NULL;
+
+		if ((insn & 0xbfa07c00) == 0x88a07c00) {
+			group = "cas";
+		}
+
+		if (group != NULL) {
+			const uint32_t nop = 0xd503201f;
+
+			MCInst_clear(MI);
+			result = decodeInstruction(DecoderTable32, MI, nop, Address, MRI, 0);
+
+			MI->unsupported = true;
+			strcpy(MI->assembly, group);
+			*Size = 4;
+
+			return result;
+		}
+	}
+
 	MCInst_clear(MI);
 	*Size = 0;
 	return MCDisassembler_Fail;

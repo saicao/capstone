@@ -434,6 +434,13 @@ void ARM_printInst(MCInst *MI, SStream *O, void *Info)
 	MCRegisterInfo *MRI = (MCRegisterInfo *)Info;
 	unsigned Opcode = MCInst_getOpcode(MI), tmp, i, pubOpcode;
 
+	if (MI->unsupported) {
+		MCInst_setOpcodePub(MI, ARM_INS_NOP);
+		SStream_concat0(O, "<bug>\t");
+		SStream_concat0(O, MI->assembly);
+		SStream_concat0(O, " instructions missing in capstone");
+		return;
+	}
 
 	// printf(">>> Opcode 0: %u\n", MCInst_getOpcode(MI));
 	switch(Opcode) {

@@ -26,6 +26,7 @@ void MCInst_Init(MCInst *inst)
 	inst->Opcode = 0;
 	inst->OpcodePub = 0;
 	inst->size = 0;
+	inst->unsupported = false;
 	inst->has_imm = false;
 	inst->op1_size = 0;
 	inst->writeback = false;

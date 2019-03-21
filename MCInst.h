@@ -90,6 +90,7 @@ MCOperand *MCOperand_CreateImm1(MCInst *inst, int64_t Val);
 struct MCInst {
 	unsigned OpcodePub;
 	uint8_t size;	// number of operands
+	bool unsupported;
 	bool has_imm;	// indicate this instruction has an X86_OP_IMM operand - used for ATT syntax
 	uint8_t op1_size; // size of 1st operand - for X86 Intel syntax
 	unsigned Opcode;
@@ -108,7 +109,7 @@ struct MCInst {
 	// operand access index for list of registers sharing the same access right (for ARM)
 	uint8_t ac_idx;
 	uint8_t popcode_adjust;   // Pseudo X86 instruction adjust
-	char assembly[8];	// for special instruction, so that we dont need printer
+	char assembly[32];	// for special instruction, so that we dont need printer
 	unsigned char evm_data[32];	// for EVM PUSH operand
 };
 
