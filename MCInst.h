@@ -14,12 +14,13 @@
 //===----------------------------------------------------------------------===//
 
 /* Capstone Disassembly Engine */
-/* By Nguyen Anh Quynh <aquynh@gmail.com>, 2013-2015 */
+/* By Nguyen Anh Quynh <aquynh@gmail.com>, 2013-2019 */
 
 #ifndef CS_MCINST_H
 #define CS_MCINST_H
 
 #include "include/capstone/capstone.h"
+#include "MCRegisterInfo.h"
 
 typedef struct MCInst MCInst;
 typedef struct cs_struct cs_struct;
@@ -52,8 +53,6 @@ bool MCOperand_isImm(const MCOperand *op);
 bool MCOperand_isFPImm(const MCOperand *op);
 
 bool MCOperand_isInst(const MCOperand *op);
-
-void MCInst_clear(MCInst *m);
 
 /// getReg - Returns the register number.
 unsigned MCOperand_getReg(const MCOperand *op);
@@ -90,7 +89,6 @@ MCOperand *MCOperand_CreateImm1(MCInst *inst, int64_t Val);
 struct MCInst {
 	unsigned OpcodePub;
 	uint8_t size;	// number of operands
-	bool unsupported;
 	bool has_imm;	// indicate this instruction has an X86_OP_IMM operand - used for ATT syntax
 	uint8_t op1_size; // size of 1st operand - for X86 Intel syntax
 	unsigned Opcode;
@@ -99,6 +97,11 @@ struct MCInst {
 	uint64_t address;	// address of this insn
 	cs_struct *csh;	// save the main csh
 	uint8_t x86opsize;	// opsize for [mem] operand
+
+	// These flags could be used to pass some info from one target subcomponent
+	// to another, for example, from disassembler to asm printer. The values of
+	// the flags have any sense on target level only (e.g. prefixes on x86).
+	unsigned flags;
 
 	// (Optional) instruction prefix, which can be up to 4 bytes.
 	// A prefix byte gets value 0 when irrelevant.
@@ -109,8 +112,10 @@ struct MCInst {
 	// operand access index for list of registers sharing the same access right (for ARM)
 	uint8_t ac_idx;
 	uint8_t popcode_adjust;   // Pseudo X86 instruction adjust
-	char assembly[32];	// for special instruction, so that we dont need printer
+	char assembly[8];	// for special instruction, so that we dont need printer
 	unsigned char evm_data[32];	// for EVM PUSH operand
+	cs_wasm_op wasm_data;    // for WASM operand
+	MCRegisterInfo *MRI;
 };
 
 void MCInst_Init(MCInst *inst);

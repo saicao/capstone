@@ -1,5 +1,5 @@
 /* Capstone Disassembly Engine */
-/* By Nguyen Anh Quynh <aquynh@gmail.com>, 2013-2015 */
+/* By Nguyen Anh Quynh <aquynh@gmail.com>, 2013-2019 */
 
 #if defined(CAPSTONE_HAS_OSXKERNEL)
 #include <Availability.h>
@@ -26,13 +26,13 @@ void MCInst_Init(MCInst *inst)
 	inst->Opcode = 0;
 	inst->OpcodePub = 0;
 	inst->size = 0;
-	inst->unsupported = false;
 	inst->has_imm = false;
 	inst->op1_size = 0;
 	inst->writeback = false;
 	inst->ac_idx = 0;
 	inst->popcode_adjust = 0;
 	inst->assembly[0] = '\0';
+	inst->wasm_data.type = WASM_OP_INVALID;
 }
 
 void MCInst_clear(MCInst *inst)
@@ -89,12 +89,6 @@ void MCInst_addOperand2(MCInst *inst, MCOperand *Op)
 	inst->Operands[inst->size] = *Op;
 
 	inst->size++;
-}
-
-void MCOperand_Init(MCOperand *op)
-{
-	op->Kind = kInvalid;
-	op->FPImmVal = 0.0;
 }
 
 bool MCOperand_isValid(const MCOperand *op)

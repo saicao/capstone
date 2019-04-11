@@ -1,5 +1,5 @@
 /* Capstone Disassembly Engine */
-/* By Nguyen Anh Quynh <aquynh@gmail.com>, 2013-2015 */
+/* By Nguyen Anh Quynh <aquynh@gmail.com>, 2013-2019 */
 
 #ifndef CS_SSTREAM_H_
 #define CS_SSTREAM_H_
@@ -15,7 +15,9 @@ void SStream_Init(SStream *ss);
 
 void SStream_concat(SStream *ss, const char *fmt, ...);
 
-void SStream_concat0(SStream *ss, char *s);
+void SStream_concat0(SStream *ss, const char *s);
+
+void SStream_concat1(SStream *ss, const char c);
 
 void printInt64Bang(SStream *O, int64_t val);
 
