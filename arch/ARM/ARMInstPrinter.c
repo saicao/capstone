@@ -221,6 +221,7 @@ static void printRegImmShift(MCInst *MI, SStream *O, ARM_AM_ShiftOpc ShOpc, unsi
 
 	//assert (!(ShOpc == ARM_AM_ror && !ShImm) && "Cannot have ror #0");
 	SStream_concat0(O, ARM_AM_getShiftOpcStr(ShOpc));
+
 	if (MI->csh->detail) {
 		if (MI->csh->doing_mem)
 			MI->flat_insn->detail->arm.operands[MI->flat_insn->detail->arm.op_count].shift.type = (arm_shifter)ShOpc;
@@ -507,6 +508,13 @@ void ARM_printInst(MCInst *MI, SStream *O, void *Info)
 			SStream_concat0(O, ", ");
 			printRegName(MI->csh, O, MCOperand_getReg(MO2));
 
+			if (MI->csh->detail) {
+				MI->flat_insn->detail->arm.operands[MI->flat_insn->detail->arm.op_count].type = ARM_OP_REG;
+				MI->flat_insn->detail->arm.operands[MI->flat_insn->detail->arm.op_count].reg = MCOperand_getReg(MO2);
+				MI->flat_insn->detail->arm.operands[MI->flat_insn->detail->arm.op_count].access = CS_AC_READ;
+				MI->flat_insn->detail->arm.op_count++;
+			}
+
 			return;
 		}
 
@@ -588,8 +596,10 @@ void ARM_printInst(MCInst *MI, SStream *O, void *Info)
 				SStream_concat0(O, "push");
 				MCInst_setOpcodePub(MI, ARM_INS_PUSH);
 				printPredicateOperand(MI, 2, O);
+
 				if (Opcode == ARM_t2STMDB_UPD)
 					SStream_concat0(O, ".w");
+
 				SStream_concat0(O, "\t");
 
 				if (MI->csh->detail) {
@@ -609,9 +619,13 @@ void ARM_printInst(MCInst *MI, SStream *O, void *Info)
 					MCOperand_getImm(MCInst_getOperand(MI, 3)) == -4) {
 				SStream_concat0(O, "push");
 				MCInst_setOpcodePub(MI, ARM_INS_PUSH);
+
 				printPredicateOperand(MI, 4, O);
+
 				SStream_concat0(O, "\t{");
+
 				printRegName(MI->csh, O, MCOperand_getReg(MCInst_getOperand(MI, 1)));
+
 				if (MI->csh->detail) {
 #ifndef CAPSTONE_DIET
 					uint8_t access;
@@ -625,7 +639,9 @@ void ARM_printInst(MCInst *MI, SStream *O, void *Info)
 #endif
 					MI->flat_insn->detail->arm.op_count++;
 				}
+
 				SStream_concat0(O, "}");
+
 				return;
 			} else
 				break;
@@ -638,10 +654,13 @@ void ARM_printInst(MCInst *MI, SStream *O, void *Info)
 				// Should only print POP if there are at least two registers in the list.
 				SStream_concat0(O, "pop");
 				MCInst_setOpcodePub(MI, ARM_INS_POP);
+
 				printPredicateOperand(MI, 2, O);
 				if (Opcode == ARM_t2LDMIA_UPD)
 					SStream_concat0(O, ".w");
+
 				SStream_concat0(O, "\t");
+
 				// unlike LDM, POP only write to registers, so skip the 1st access code
 				MI->ac_idx = 1;
 				if (MI->csh->detail) {
@@ -652,6 +671,7 @@ void ARM_printInst(MCInst *MI, SStream *O, void *Info)
 				}
 
 				printRegisterList(MI, 4, O);
+
 				return;
 			}
 			break;
@@ -660,11 +680,12 @@ void ARM_printInst(MCInst *MI, SStream *O, void *Info)
 			if (MCOperand_getReg(MCInst_getOperand(MI, 2)) == ARM_SP) {
 				MCOperand *MO2 = MCInst_getOperand(MI, 4);
 
-				if (MCOperand_getImm(MO2) == 4) {
+				if (getAM2Offset((unsigned int)MCOperand_getImm(MO2)) == 4) {
 					SStream_concat0(O, "pop");
 					MCInst_setOpcodePub(MI, ARM_INS_POP);
 					printPredicateOperand(MI, 5, O);
 					SStream_concat0(O, "\t{");
+
 					printRegName(MI->csh, O, MCOperand_getReg(MCInst_getOperand(MI, 0)));
 
 					if (MI->csh->detail) {
@@ -962,18 +983,16 @@ static void printSORegImmOperand(MCInst *MI, unsigned OpNum, SStream *O)
 
 	printRegName(MI->csh, O, MCOperand_getReg(MO1));
 
-	// Print the shift opc.
-	printRegImmShift(MI, O, ARM_AM_getSORegShOp((unsigned int)MCOperand_getImm(MO2)),
-			getSORegOffset((unsigned int)MCOperand_getImm(MO2)));
-
 	if (MI->csh->detail) {
 		MI->flat_insn->detail->arm.operands[MI->flat_insn->detail->arm.op_count].type = ARM_OP_REG;
 		MI->flat_insn->detail->arm.operands[MI->flat_insn->detail->arm.op_count].reg = MCOperand_getReg(MO1);
 		MI->flat_insn->detail->arm.operands[MI->flat_insn->detail->arm.op_count].access = CS_AC_READ;
-		MI->flat_insn->detail->arm.operands[MI->flat_insn->detail->arm.op_count].shift.type = MCOperand_getImm(MO2) & 7;
-		MI->flat_insn->detail->arm.operands[MI->flat_insn->detail->arm.op_count].shift.value = (unsigned int)MCOperand_getImm(MO2) >> 3;
 		MI->flat_insn->detail->arm.op_count++;
 	}
+
+	// Print the shift opc.
+	printRegImmShift(MI, O, ARM_AM_getSORegShOp((unsigned int)MCOperand_getImm(MO2)),
+			getSORegOffset((unsigned int)MCOperand_getImm(MO2)));
 }
 
 //===--------------------------------------------------------------------===//
@@ -1572,7 +1591,7 @@ static void printPKHASRShiftImm(MCInst *MI, unsigned OpNum, SStream *O)
 
 	// A shift amount of 32 is encoded as 0.
 	if (Imm == 0)
-		return;
+		Imm = 32;
 
 	//assert(Imm > 0 && Imm <= 32 && "Invalid PKH shift immediate value!");
 	if (Imm > HEX_THRESHOLD)
