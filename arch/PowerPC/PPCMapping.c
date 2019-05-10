@@ -13,7 +13,6 @@
 #define GET_INSTRINFO_ENUM
 #include "PPCGenInstrInfo.inc"
 
-#ifndef CAPSTONE_DIET
 // NOTE: this reg_name_maps[] reflects the order of registers in ppc_reg
 static const name_map reg_name_maps[] = {
 	{ PPC_REG_INVALID, NULL },
@@ -263,7 +262,6 @@ static const name_map reg_name_maps[] = {
     { PPC_REG_CR6UN, "cr6un" },
     { PPC_REG_CR7UN, "cr7un" },
 };
-#endif
 
 const char *PPC_reg_name(csh handle, unsigned int reg)
 {
@@ -295,18 +293,17 @@ const char *PPC_reg_name(csh handle, unsigned int reg)
     return NULL;
 }
 
-static const unsigned short reg_mapping[] = {
-#include "PPCRegisterMapping.inc"
-};
-
-// map internal raw register to 'public' register
-ppc_reg PPC_map_register(unsigned int r)
+ppc_reg PPC_name_reg(const char *name)
 {
-        if (r < ARR_SIZE(reg_mapping))
-                return reg_mapping[r - 1];
+	unsigned int i;
 
-        // cannot find this register
-        return 0;
+	for(i = 1; i < ARR_SIZE(reg_name_maps); i++) {
+		if (!strcmp(name, reg_name_maps[i].name))
+			return reg_name_maps[i].id;
+	}
+
+	// not found
+	return 0;
 }
 
 static const insn_map insns[] = {
@@ -420,7 +417,6 @@ const char *PPC_group_name(csh handle, unsigned int id)
 #endif
 }
 
-#if 0
 static const struct ppc_alias alias_insn_name_maps[] = {
 	//{ PPC_INS_BTA, "bta" },
 	{ PPC_INS_B, PPC_BC_LT, "blt" },
@@ -516,59 +512,48 @@ static const struct ppc_alias alias_insn_name_maps[] = {
 bool PPC_alias_insn(const char *name, struct ppc_alias *alias)
 {
 	size_t i;
-#ifndef CAPSTONE_DIET
-	int x;
-#endif
+
+	alias->cc = PPC_BC_INVALID;
 
 	for(i = 0; i < ARR_SIZE(alias_insn_name_maps); i++) {
 		if (!strcmp(name, alias_insn_name_maps[i].mnem)) {
-			alias->id = alias_insn_name_maps[i].id;
+			// alias->id = alias_insn_name_maps[i].id;
 			alias->cc = alias_insn_name_maps[i].cc;
 			return true;
 		}
 	}
 
-#ifndef CAPSTONE_DIET
-	// not really an alias insn
-	x = name2id(&insn_name_maps[1], ARR_SIZE(insn_name_maps) - 1, name);
-	if (x != -1) {
-		alias->id = insn_name_maps[x].id;
-		alias->cc = PPC_BC_INVALID;
-		return true;
-	}
-#endif
-
 	// not found
 	return false;
 }
-#endif
-
-// list all relative branch instructions
-static const unsigned int insn_abs[] = {
-	PPC_BA,
-	PPC_BCCA,
-	PPC_BCCLA,
-	PPC_BDNZA,
-	PPC_BDNZAm,
-	PPC_BDNZAp,
-	PPC_BDNZLA,
-	PPC_BDNZLAm,
-	PPC_BDNZLAp,
-	PPC_BDZA,
-	PPC_BDZAm,
-	PPC_BDZAp,
-	PPC_BDZLAm,
-	PPC_BDZLAp,
-	PPC_BLA,
-	PPC_gBCA,
-	PPC_gBCLA,
-	0
-};
 
 // check if this insn is relative branch
 bool PPC_abs_branch(cs_struct *h, unsigned int id)
 {
-	int i;
+	unsigned int i;
+	// list all relative branch instructions
+	static const unsigned int insn_abs[] = {
+		PPC_BA,
+		PPC_BCCA,
+		PPC_BCCLA,
+		PPC_BDNZA,
+		PPC_BDNZAm,
+		PPC_BDNZAp,
+		PPC_BDNZLA,
+		PPC_BDNZLAm,
+		PPC_BDNZLAp,
+		PPC_BDZA,
+		PPC_BDZAm,
+		PPC_BDZAp,
+		PPC_BDZLAm,
+		PPC_BDZLAp,
+		PPC_BLA,
+		PPC_gBCA,
+		PPC_gBCLA,
+		0
+	};
+
+	// printf("opcode: %u\n", id);
 
 	for (i = 0; insn_abs[i]; i++) {
 		if (id == insn_abs[i]) {

@@ -1,3 +1,55 @@
+!# issue PPC bdnzt
+!# CS_ARCH_PPC, CS_MODE_64 | CS_MODE_BIG_ENDIAN, None
+0x1000: 0x41,0x00,0xff,0xac == bdnzt lt, 0xfac
+
+!# issue 1469 PPC CRx
+!# CS_ARCH_PPC, CS_MODE_64 | CS_MODE_BIG_ENDIAN, CS_OPT_DETAIL
+0x4c,0x02,0x39,0x82 == crxor cr0lt, cr0eq, cr1un ; operands[0].type: REG = cr0lt
+
+!# issue 1468 B target
+!# CS_ARCH_PPC, CS_MODE_64 | CS_MODE_BIG_ENDIAN, None
+0x1000: 0x4b,0xff,0xf8,0x00 == b 0x800
+
+!# issue 1456 test alt 1
+!# CS_ARCH_X86, CS_MODE_32, None
+0xf6,0x08,0x00 == test byte ptr [eax], 0
+
+!# issue 1456 test alt 2
+!# CS_ARCH_X86, CS_MODE_32, None
+0xf7,0x08,0x00,0x00,0x00,0x00 == test dword ptr [eax], 0
+
+!# issue 1472 lock sub
+!# CS_ARCH_X86, CS_MODE_32, None
+0xF0,0x2B,0x45,0x08 == lock sub eax, dword ptr [ebp + 8]
+
+!# issue 1472 lock or
+!# CS_ARCH_X86, CS_MODE_32, None
+0xF0,0x0B,0x45,0x08 == lock or eax, dword ptr [ebp + 8]
+
+!# issue 1472 lock and
+!# CS_ARCH_X86, CS_MODE_32, None
+0xF0,0x23,0x45,0x08 == lock and eax, dword ptr [ebp + 8]
+
+!# issue 1472 lock add
+!# CS_ARCH_X86, CS_MODE_32, None
+0xF0,0x03,0x45,0x08 == lock add eax, dword ptr [ebp + 8]
+
+!# issue 1456 MOV dr
+!# CS_ARCH_X86, CS_MODE_32, None
+0x0f,0x23,0x00 == mov dr0, eax
+
+!# issue 1456 MOV dr
+!# CS_ARCH_X86, CS_MODE_32, None
+0x0f,0x21,0x00 == mov eax, dr0
+
+!# issue 1456 MOV cr
+!# CS_ARCH_X86, CS_MODE_32, None
+0x0f,0x22,0x00 == mov cr0, eax
+
+!# issue 1472 lock adc
+!# CS_ARCH_X86, CS_MODE_32, None
+0xf0,0x12,0x45,0x08 == lock adc al, byte ptr [ebp + 8]
+
 !# issue 1456 xmmword
 !# CS_ARCH_X86, CS_MODE_32, None
 0x66,0x0f,0x2f,0x00 == comisd xmm0, xmmword ptr [eax]
