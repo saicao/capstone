@@ -645,7 +645,6 @@ void AArch64_printInst(MCInst *MI, SStream *O, void *Info)
 				 arm64_op_addVectorArrSpecifier(MI, ARM64_VAS_1S);
 				 break;
 		}
-
 	} else {
 		printInstruction(MI, O);
 	}
@@ -2006,9 +2005,12 @@ static void printSVERegOp(MCInst *MI, unsigned OpNum, SStream *O, char suffix)
 #endif
 
 	Reg = MCOperand_getReg(MCInst_getOperand(MI, OpNum));
-	MI->flat_insn->detail->arm64.operands[MI->flat_insn->detail->arm64.op_count].type = ARM64_OP_REG;
-	MI->flat_insn->detail->arm64.operands[MI->flat_insn->detail->arm64.op_count].reg = Reg;
-	MI->flat_insn->detail->arm64.op_count++;
+
+	if (MI->csh->detail) {
+		MI->flat_insn->detail->arm64.operands[MI->flat_insn->detail->arm64.op_count].type = ARM64_OP_REG;
+		MI->flat_insn->detail->arm64.operands[MI->flat_insn->detail->arm64.op_count].reg = Reg;
+		MI->flat_insn->detail->arm64.op_count++;
+	}
 
 	SStream_concat0(O, getRegisterName(Reg, AArch64_NoRegAltName));
 

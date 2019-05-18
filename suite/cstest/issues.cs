@@ -1,3 +1,57 @@
+!# issue 1478 tbegin.
+!# CS_ARCH_PPC, CS_MODE_64 | CS_MODE_BIG_ENDIAN, CS_OPT_DETAIL
+0x7c,0x20,0x05,0x1d == tbegin. 1 ; Update-CR0: True
+
+!# issue 970 PPC bdnzt lt
+!# CS_ARCH_PPC, CS_MODE_64 | CS_MODE_BIG_ENDIAN, CS_OPT_DETAIL
+0x41,0x00,0xff,0xac == bdnzt lt, 0xffffffffffffffac ; operands[0].type: REG = cr0lt
+
+!# issue 970 PPC bdnzt eq
+!# CS_ARCH_PPC, CS_MODE_64 | CS_MODE_BIG_ENDIAN, CS_OPT_DETAIL
+0x41,0x02,0xff,0xac == bdnzt eq, 0xffffffffffffffac ; operands[0].type: REG = cr0eq
+
+!# issue 969 PPC bdnzflr operand 2
+!# CS_ARCH_PPC, CS_MODE_64 | CS_MODE_BIG_ENDIAN, CS_OPT_DETAIL
+0x4c,0x10,0x00,0x20 == bdnzflr 4*cr4+lt ; operands[0].type: REG = cr4lt
+
+0x41,0x82,0x00,0x10 == beq 0x10 ; Groups: jump
+
+!# issue 1481 ARM64 LDR operand2
+!# CS_ARCH_ARM64, CS_MODE_LITTLE_ENDIAN, CS_OPT_DETAIL
+0xe9,0x03,0x40,0xf9 == ldr x9, [sp] ; operands[1].mem.base: REG = sp
+
+!# issue 968 PPC absolute branch: bdnzla
+!# CS_ARCH_PPC, CS_MODE_64 | CS_MODE_BIG_ENDIAN, None
+0x1000: 0x42,0x00,0x12,0x37 == bdnzla 0x1234
+
+!# issue 968 PPC absolute branch: bdzla
+!# CS_ARCH_PPC, CS_MODE_64 | CS_MODE_BIG_ENDIAN, None
+0x1000: 0x42,0x40,0x12,0x37 == bdzla 0x1234
+
+!# issue X86 xrelease xchg
+!# CS_ARCH_X86, CS_MODE_32, None
+0xf3,0x87,0x03 == xrelease xchg dword ptr [ebx], eax
+
+!# issue X86 xacquire xchg
+!# CS_ARCH_X86, CS_MODE_32, None
+0xf2,0x87,0x03 == xacquire xchg dword ptr [ebx], eax
+
+!# issue X86 xrelease
+!# CS_ARCH_X86, CS_MODE_64, None
+0xf3,0xf0,0x31,0x1f == xrelease lock xor dword ptr [rdi], ebx
+
+!# issue 1477 X86 xacquire
+!# CS_ARCH_X86, CS_MODE_64, None
+0xf2,0xf0,0x31,0x1f == xacquire lock xor dword ptr [rdi], ebx
+
+!# issue PPC JUMP group
+!# CS_ARCH_PPC, CS_MODE_64 | CS_MODE_BIG_ENDIAN, CS_OPT_DETAIL
+0x41,0x82,0x00,0x10 == beq 0x10 ; Groups: jump
+
+!# issue 1468 PPC bdnz
+!# CS_ARCH_PPC, CS_MODE_64 | CS_MODE_BIG_ENDIAN, None
+0x101086c: 0x42,0x00,0xff,0xf8 == bdnz 0x1010864
+
 !# issue PPC bdnzt
 !# CS_ARCH_PPC, CS_MODE_64 | CS_MODE_BIG_ENDIAN, None
 0x1000: 0x41,0x00,0xff,0xac == bdnzt lt, 0xfac

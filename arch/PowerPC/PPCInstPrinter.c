@@ -85,6 +85,10 @@ void PPC_post_printer(csh ud, cs_insn *insn, char *insn_asm, MCInst *mci)
 	} else if (strrchr(insn_asm, '-') != NULL) {
 		insn->detail->ppc.bh = PPC_BH_MINUS;
 	}
+
+	if (strrchr(insn_asm, '.') != NULL) {
+		insn->detail->ppc.update_cr0 = true;
+	}
 }
 
 #define GET_INSTRINFO_ENUM
@@ -116,6 +120,15 @@ static int getBICR(int bi)
 }
 
 static void op_addReg(MCInst *MI, unsigned int reg)
+{
+	if (MI->csh->detail) {
+		MI->flat_insn->detail->ppc.operands[MI->flat_insn->detail->ppc.op_count].type = PPC_OP_REG;
+		MI->flat_insn->detail->ppc.operands[MI->flat_insn->detail->ppc.op_count].reg = reg;
+		MI->flat_insn->detail->ppc.op_count++;
+	}
+}
+
+static void add_CRxx(MCInst *MI, ppc_reg reg)
 {
 	if (MI->csh->detail) {
 		MI->flat_insn->detail->ppc.operands[MI->flat_insn->detail->ppc.op_count].type = PPC_OP_REG;
@@ -295,6 +308,7 @@ static char *printAliasBcc(MCInst *MI, SStream *OS, void *info)
 		int cr = getBICR(MCOperand_getReg(MCInst_getOperand(MI, 1)));
 
 		if (decCtr) {
+			int cd;
 			needComma = true;
 			SStream_concat0(&ss, " ");
 
@@ -302,38 +316,41 @@ static char *printAliasBcc(MCInst *MI, SStream *OS, void *info)
 				SStream_concat(&ss, "4*cr%d+", cr - PPC_CR0);
 			}
 
-			cr = getBICRCond(MCOperand_getReg(MCInst_getOperand(MI, 1)));
-			switch(cr) {
+			cd = getBICRCond(MCOperand_getReg(MCInst_getOperand(MI, 1)));
+			switch(cd) {
 				case CREQ:
 					SStream_concat0(&ss, "eq");
+					if (cr <= PPC_CR0)
+						add_CRxx(MI, PPC_REG_CR0EQ);
 					op_addBC(MI, PPC_BC_EQ);
 					break;
 				case CRGT:
 					SStream_concat0(&ss, "gt");
+					if (cr <= PPC_CR0)
+						add_CRxx(MI, PPC_REG_CR0GT);
 					op_addBC(MI, PPC_BC_GT);
 					break;
 				case CRLT:
 					SStream_concat0(&ss, "lt");
+					if (cr <= PPC_CR0)
+						add_CRxx(MI, PPC_REG_CR0LT);
 					op_addBC(MI, PPC_BC_LT);
 					break;
 				case CRUN:
 					SStream_concat0(&ss, "so");
+					if (cr <= PPC_CR0)
+						add_CRxx(MI, PPC_REG_CR0UN);
 					op_addBC(MI, PPC_BC_SO);
 					break;
 			}
 
-#if 0
-			cr = getBICR(MCOperand_getReg(MCInst_getOperand(MI, 1)));
 			if (cr > PPC_CR0) {
 				if (MI->csh->detail) {
-					MI->flat_insn->detail->ppc.operands[MI->flat_insn->detail->ppc.op_count].type = PPC_OP_CRX;
-					MI->flat_insn->detail->ppc.operands[MI->flat_insn->detail->ppc.op_count].crx.scale = 4;
-					MI->flat_insn->detail->ppc.operands[MI->flat_insn->detail->ppc.op_count].crx.reg = PPC_REG_CR0 + cr - PPC_CR0;
-					MI->flat_insn->detail->ppc.operands[MI->flat_insn->detail->ppc.op_count].crx.cond = MI->flat_insn->detail->ppc.bc;
+					MI->flat_insn->detail->ppc.operands[MI->flat_insn->detail->ppc.op_count].type = PPC_OP_REG;
+					MI->flat_insn->detail->ppc.operands[MI->flat_insn->detail->ppc.op_count].reg = MCOperand_getReg(MCInst_getOperand(MI, 1));
 					MI->flat_insn->detail->ppc.op_count++;
 				}
 			}
-#endif
 		} else {
 			if (cr > PPC_CR0) {
 				needComma = true;
@@ -384,12 +401,17 @@ static char *printAliasBcc(MCInst *MI, SStream *OS, void *info)
 	return tmp;
 }
 
+static bool isBOCTRBranch(unsigned int op)
+{
+	return ((op >= PPC_BDNZ) && (op <= PPC_BDZp));
+}
+
 void PPC_printInst(MCInst *MI, SStream *O, void *Info)
 {
 	char *mnem;
 	unsigned int opcode = MCInst_getOpcode(MI);
 
-    // printf("opcode = %u\n", opcode);
+	// printf("opcode = %u\n", opcode);
 
 	// Check for slwi/srwi mnemonics.
 	if (opcode == PPC_RLWINM) {
@@ -579,6 +601,14 @@ void PPC_printInst(MCInst *MI, SStream *O, void *Info)
 		int64_t bd = MCOperand_getImm(MCInst_getOperand(MI, 2));
 		bd = SignExtend64(bd, 14);
 		MCOperand_setImm(MCInst_getOperand(MI, 2), bd);
+	}
+
+	if (isBOCTRBranch(MCInst_getOpcode(MI))) {
+		if (MCOperand_isImm(MCInst_getOperand(MI,0))) {
+			int64_t bd = MCOperand_getImm(MCInst_getOperand(MI, 0));
+			bd = SignExtend64(bd, 14);
+			MCOperand_setImm(MCInst_getOperand(MI, 0), bd);
+		}
 	}
 
 	mnem = printAliasBcc(MI, O, Info);
@@ -988,7 +1018,7 @@ static void printAbsBranchOperand(MCInst *MI, unsigned OpNo, SStream *O)
 	//imm = MCOperand_getImm(MCInst_getOperand(MI, OpNo)) * 4;
 
 	if (!PPC_abs_branch(MI->csh, MCInst_getOpcode(MI))) {
-		imm = MI->address + imm;
+		imm += MI->address;
 	}
 
 	printUInt64(O, imm);
