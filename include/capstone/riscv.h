@@ -13,7 +13,7 @@ extern "C" {
 #include <stdint.h>
 #endif
 
-#include "platform.h"
+#include "capstone/platform.h"
 
 // GCC MIPS toolchain has a default macro called "mips" which breaks
 // compilation
@@ -479,22 +479,6 @@ typedef enum riscv_insn {
 
 //> Group of RISCV instructions
 typedef enum riscv_insn_group {
-#if 0
-  	{ RISCV_GRP_HASSTDEXTA, 0 },
-  	{ RISCV_GRP_HASSTDEXTA, RISCV_GRP_ISRV64, 0 },
-  	{ RISCV_GRP_HASSTDEXTC, 0 },
-  	{ RISCV_GRP_HASSTDEXTC, RISCV_GRP_HASSTDEXTD, 0 },
-  	{ RISCV_GRP_HASSTDEXTC, RISCV_GRP_HASSTDEXTF, RISCV_GRP_ISRV32, 0 },
-  	{ RISCV_GRP_HASSTDEXTC, RISCV_GRP_ISRV32, 0 },
-  	{ RISCV_GRP_HASSTDEXTC, RISCV_GRP_ISRV64, 0 },
-  	{ RISCV_GRP_HASSTDEXTD, 0 },
-  	{ RISCV_GRP_HASSTDEXTD, RISCV_GRP_ISRV64, 0 },
-  	{ RISCV_GRP_HASSTDEXTF, 0 },
-  	{ RISCV_GRP_HASSTDEXTF, RISCV_GRP_ISRV64, 0 },
-  	{ RISCV_GRP_HASSTDEXTM, 0 },
-  	{ RISCV_GRP_HASSTDEXTM, RISCV_GRP_ISRV64, 0 },
-  	{ RISCV_GRP_ISRV64, 0 },
-#endif
   	RISCV_GRP_INVALID = 0, // = CS_GRP_INVALID
   	RISCV_GRP_JUMP,
   

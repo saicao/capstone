@@ -69,7 +69,7 @@
 #include "arch/MOS65XX/MOS65XXModule.h"
 #include "arch/BPF/BPFModule.h"
 
-static struct {
+static const struct {
 	// constructor initialization
 	cs_err (*arch_init)(cs_struct *);
 	// support cs_option()
@@ -197,7 +197,8 @@ static struct {
 	{
 		MOS65XX_global_init,
 		MOS65XX_option,
-		~(CS_MODE_BIG_ENDIAN),
+		~(CS_MODE_LITTLE_ENDIAN | CS_MODE_MOS65XX_6502 | CS_MODE_MOS65XX_65C02
+				| CS_MODE_MOS65XX_W65C02 | CS_MODE_MOS65XX_65816_LONG_MX),
 	},
 #else
 	{ NULL, NULL, 0 },
@@ -233,7 +234,7 @@ static struct {
 };
 
 // bitmask of enabled architectures
-static uint32_t all_arch = 0
+static const uint32_t all_arch = 0
 #ifdef CAPSTONE_HAS_ARM
 	| (1 << CS_ARCH_ARM)
 #endif
@@ -513,6 +514,23 @@ cs_err CAPSTONE_API cs_close(csh *handle)
 	return CS_ERR_OK;
 }
 
+// replace str1 in target with str2; target starts with str1
+// output is put into result (which is array of char with size CS_MNEMONIC_SIZE)
+// return 0 on success, -1 on failure
+static int str_replace(char *result, char *target, const char *str1, char *str2)
+{
+	// only perform replacement if the output fits into result
+	if (strlen(target) - strlen(str1) + strlen(str2) < CS_MNEMONIC_SIZE - 1)  {
+		// copy str2 to begining of result
+		strcpy(result, str2);
+		// skip str1 - already replaced by str2
+		strcat(result, target + strlen(str1));
+
+		return 0;
+	} else
+		return -1;
+}
+
 // fill insn with mnemonic & operands info
 static void fill_insn(struct cs_struct *handle, cs_insn *insn, char *buffer, MCInst *mci,
 		PostPrinter_t postprinter, const uint8_t *code)
@@ -556,9 +574,14 @@ static void fill_insn(struct cs_struct *handle, cs_insn *insn, char *buffer, MCI
 		struct insn_mnem *tmp = handle->mnem_list;
 		while(tmp) {
 			if (tmp->insn.id == insn->id) {
-				// found this instruction, so copy its mnemonic
-				(void)strncpy(insn->mnemonic, tmp->insn.mnemonic, sizeof(insn->mnemonic) - 1);
-				insn->mnemonic[sizeof(insn->mnemonic) - 1] = '\0';
+				char str[CS_MNEMONIC_SIZE];
+
+				if (!str_replace(str, insn->mnemonic, cs_insn_name((csh)handle, insn->id), tmp->insn.mnemonic)) {
+					// copy result to mnemonic
+					(void)strncpy(insn->mnemonic, str, sizeof(insn->mnemonic) - 1);
+					insn->mnemonic[sizeof(insn->mnemonic) - 1] = '\0';
+				}
+
 				break;
 			}
 			tmp = tmp->next;

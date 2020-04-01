@@ -1,5 +1,5 @@
 /* Capstone Disassembler Engine */
-/* By Nguyen Anh Quynh <aquynh@gmail.com>, 2013 */
+/* By Nguyen Anh Quynh <aquynh@gmail.com>, 2013-2019 */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -83,7 +83,7 @@ static void test()
 			CS_ARCH_X86,
 			CS_MODE_16,
 			(unsigned char *)X86_CODE16,
-			sizeof(X86_CODE32) - 1,
+			sizeof(X86_CODE16) - 1,
 			"X86 16bit (Intel syntax)"
 		},
 		{

@@ -22,11 +22,20 @@ endif
 
 ifeq ($(CROSS),)
 RANLIB ?= ranlib
+else ifeq ($(ANDROID), 1)
+CC = $(CROSS)/../../bin/clang
+AR = $(CROSS)/ar
+RANLIB = $(CROSS)/ranlib
+STRIP = $(CROSS)/strip
 else
 CC = $(CROSS)gcc
 AR = $(CROSS)ar
 RANLIB = $(CROSS)ranlib
 STRIP = $(CROSS)strip
+endif
+
+ifeq ($(OS),OS/390)
+RANLIB = touch
 endif
 
 ifneq (,$(findstring yes,$(CAPSTONE_DIET)))
@@ -40,7 +49,14 @@ ifneq (,$(findstring yes,$(CAPSTONE_X86_ATT_DISABLE)))
 CFLAGS += -DCAPSTONE_X86_ATT_DISABLE
 endif
 
+ifeq ($(CC),xlc)
+CFLAGS += -qcpluscmt -qkeyword=inline -qlanglvl=extc1x -Iinclude
+ifneq ($(OS),OS/390)
+CFLAGS += -fPIC
+endif
+else
 CFLAGS += -fPIC -Wall -Wwrite-strings -Wmissing-prototypes -Iinclude
+endif
 
 ifeq ($(CAPSTONE_USE_SYS_DYN_MEM),yes)
 CFLAGS += -DCAPSTONE_USE_SYS_DYN_MEM
@@ -83,10 +99,10 @@ LIBDATADIR = $(LIBDIR)
 
 ifndef USE_GENERIC_LIBDATADIR
 ifeq ($(UNAME_S), FreeBSD)
-LIBDATADIR = $(PREFIX)/libdata
+LIBDATADIR = $(DESTDIR)$(PREFIX)/libdata
 endif
 ifeq ($(UNAME_S), DragonFly)
-LIBDATADIR = $(PREFIX)/libdata
+LIBDATADIR = $(DESTDIR)$(PREFIX)/libdata
 endif
 endif
 
@@ -330,7 +346,11 @@ endif
 else
 CFLAGS += $(foreach arch,$(LIBARCHS),-arch $(arch))
 LDFLAGS += $(foreach arch,$(LIBARCHS),-arch $(arch))
+ifeq ($(OS), AIX)
+$(LIBNAME)_LDFLAGS += -qmkshrobj
+else
 $(LIBNAME)_LDFLAGS += -shared
+endif
 # Cygwin?
 IS_CYGWIN := $(shell $(CC) -dumpmachine 2>/dev/null | grep -i cygwin | wc -l)
 ifeq ($(IS_CYGWIN),1)
@@ -406,7 +426,7 @@ else
 endif
 endif
 
-$(LIBOBJ): config.mk *.h include/capstone/*.h
+$(LIBOBJ): config.mk
 
 $(LIBOBJ_ARM): $(DEP_ARM)
 $(LIBOBJ_ARM64): $(DEP_ARM64)
@@ -437,13 +457,18 @@ endif
 endif
 
 $(PKGCFGF):
-	@mkdir -p $(@D)
 ifeq ($(V),0)
 	$(call log,GEN,$(@:$(BLDIR)/%=%))
 	@$(generate-pkgcfg)
 else
 	$(generate-pkgcfg)
 endif
+
+# create a list of auto dependencies
+AUTODEPS:= $(patsubst %.o,%.d, $(LIBOBJ))
+
+# include by auto dependencies
+-include $(AUTODEPS)
 
 install: $(PKGCFGF) $(ARCHIVE) $(LIBRARY)
 	mkdir -p $(LIBDIR)
@@ -455,10 +480,8 @@ endif
 	$(INSTALL_DATA) include/capstone/*.h $(DESTDIR)$(INCDIR)/$(LIBNAME)
 	mkdir -p $(PKGCFGDIR)
 	$(INSTALL_DATA) $(PKGCFGF) $(PKGCFGDIR)
-ifeq (,$(findstring yes,$(CAPSTONE_BUILD_CORE_ONLY)))
 	mkdir -p $(BINDIR)
 	$(INSTALL_LIB) cstool/cstool $(BINDIR)
-endif
 
 uninstall:
 	rm -rf $(DESTDIR)$(INCDIR)/$(LIBNAME)
@@ -470,6 +493,8 @@ clean:
 	rm -f $(LIBOBJ)
 	rm -f $(BLDIR)/lib$(LIBNAME).* $(BLDIR)/$(LIBNAME).pc
 	rm -f $(PKGCFGF)
+	rm -f $(AUTODEPS)
+	[ "${ANDROID}" = "1" ] && rm -rf android-ndk-* || true
 	$(MAKE) -C cstool clean
 
 ifeq (,$(findstring yes,$(CAPSTONE_BUILD_CORE_ONLY)))
@@ -546,9 +571,12 @@ define install-library
 endef
 endif
 
+ifeq ($(AR_FLAGS),)
+AR_FLAGS := q
+endif
 
 define create-archive
-	$(AR) q $(ARCHIVE) $(LIBOBJ)
+	$(AR) $(AR_FLAGS) $(ARCHIVE) $(LIBOBJ)
 	$(RANLIB) $(ARCHIVE)
 endef
 

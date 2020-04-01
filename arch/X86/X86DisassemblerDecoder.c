@@ -159,11 +159,8 @@ static InstrUID decode(OpcodeType type,
                        uint8_t modRM)
 {
 	const struct ModRMDecision *dec = NULL;
-	static unsigned int index = -1;
-	static struct OpcodeDecision emptyDecision;
-
-	if (index == -1)
-		memset((void *)&emptyDecision, 0, sizeof(emptyDecision));
+	unsigned int index;
+	static const struct OpcodeDecision emptyDecision = { 0 };
 
 	switch (type) {
 		default: break;	// never reach
@@ -794,16 +791,20 @@ static int readOpcode(struct InternalInstruction* insn)
 				// 		mmmmmFromVEX2of3(insn->vectorExtensionPrefix[1]));
 				return -1;
 			case VEX_LOB_0F:
+				//insn->twoByteEscape = 0x0f;
 				insn->opcodeType = TWOBYTE;
 				return consumeByte(insn, &insn->opcode);
 			case VEX_LOB_0F38:
+				//insn->twoByteEscape = 0x0f;
 				insn->opcodeType = THREEBYTE_38;
 				return consumeByte(insn, &insn->opcode);
 			case VEX_LOB_0F3A:
+				//insn->twoByteEscape = 0x0f;
 				insn->opcodeType = THREEBYTE_3A;
 				return consumeByte(insn, &insn->opcode);
 		}
 	} else if (insn->vectorExtensionType == TYPE_VEX_2B) {
+		//insn->twoByteEscape = 0x0f;
 		insn->opcodeType = TWOBYTE;
 		return consumeByte(insn, &insn->opcode);
 	} else if (insn->vectorExtensionType == TYPE_XOP) {
@@ -832,6 +833,8 @@ static int readOpcode(struct InternalInstruction* insn)
 
 	if (current == 0x0f) {
 		// dbgprintf(insn, "Found a two-byte escape prefix (0x%hhx)", current);
+		insn->twoByteEscape = current;
+
 		if (consumeByte(insn, &current))
 			return -1;
 
@@ -2275,6 +2278,7 @@ static bool checkPrefix(struct InternalInstruction *insn)
 		}
 	}
 
+#if 0
 	// REPNE prefix
 	if (insn->repeatPrefix) {
 		// 0xf2 can be a part of instruction encoding, but not really a prefix.
@@ -2283,6 +2287,7 @@ static bool checkPrefix(struct InternalInstruction *insn)
 			insn->prefix0 = 0;
 		}
 	}
+#endif
 
 	// no invalid prefixes
 	return false;

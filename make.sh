@@ -13,6 +13,7 @@ build_android() {
     echo "ERROR! Please set \$NDK to point at your Android NDK directory."
     exit 1
   fi
+
   HOSTOS=$(uname -s | tr 'LD' 'ld')
   HOSTARCH=$(uname -m)
 
@@ -22,13 +23,11 @@ build_android() {
   case "$TARGARCH" in
     arm)
       [ -n "$APILEVEL" ] || APILEVEL="android-14"  # default to ICS
-      [ -n "$GCCVER" ] || GCCVER="4.8"
-      CROSS=arm-linux-androideabi-
+      CROSS=arm-linux-androideabi
       ;;
     arm64)
       [ -n "$APILEVEL" ] || APILEVEL="android-21"  # first with arm64
-      [ -n "$GCCVER" ] || GCCVER="4.9"
-      CROSS=aarch64-linux-android-
+      CROSS=aarch64-linux-android
       ;;
 
     *)
@@ -37,10 +36,16 @@ build_android() {
       ;;
   esac
 
-  TOOLCHAIN="$NDK/toolchains/$CROSS$GCCVER/prebuilt/$HOSTOS-$HOSTARCH"
-  PLATFORM="$NDK/platforms/$APILEVEL/arch-$TARGARCH"
+  STANDALONE=`realpath android-ndk-${TARGARCH}-${APILEVEL}`
 
-  CROSS="$TOOLCHAIN/bin/$CROSS" CFLAGS="--sysroot=$PLATFORM" LDFLAGS="--sysroot=$PLATFORM" ${MAKE} $*
+  [ -d $STANDALONE ] || {
+      python ${NDK}/build/tools/make_standalone_toolchain.py \
+             --arch ${TARGARCH} \
+             --api ${APILEVEL##*-} \
+             --install-dir ${STANDALONE}
+  }
+
+  ANDROID=1 CROSS="${STANDALONE}/${CROSS}/bin" CFLAGS="--sysroot=${STANDALONE}/sysroot" ${MAKE} $*
 }
 
 # build iOS lib for all iDevices, or only specific device
@@ -111,7 +116,12 @@ TARGET="$1"
 
 case "$TARGET" in
   "" | "default" ) ${MAKE} "$@";;
-  "debug" ) CAPSTONE_USE_SYS_DYN_MEM=yes CAPSTONE_STATIC=yes CFLAGS='-O0 -g -fsanitize=address' LDFLAGS='-fsanitize=address' ${MAKE} "$@";;
+  "debug" ) \
+      CAPSTONE_USE_SYS_DYN_MEM=yes \
+      CAPSTONE_STATIC=yes \
+      CFLAGS='-DCAPSTONE_DEBUG -O0 -g -fsanitize=address' \
+      LDFLAGS='-fsanitize=address' \
+      ${MAKE} "$@";;
   "install" ) install;;
   "uninstall" ) uninstall;;
   "nix32" ) CFLAGS=-m32 LDFLAGS=-m32 ${MAKE} "$@";;
@@ -127,9 +137,17 @@ case "$TARGET" in
   "ios_armv7" ) build_iOS armv7 "$@";;
   "ios_armv7s" ) build_iOS armv7s "$@";;
   "ios_arm64" ) build_iOS arm64 "$@";;
-  "osx-kernel" ) CAPSTONE_USE_SYS_DYN_MEM=yes CAPSTONE_HAS_OSXKERNEL=yes CAPSTONE_ARCHS=x86 CAPSTONE_SHARED=no CAPSTONE_BUILD_CORE_ONLY=yes ${MAKE} "$@";;
+  "osx-kernel" ) CAPSTONE_USE_SYS_DYN_MEM=yes \
+      CAPSTONE_HAS_OSXKERNEL=yes \
+      CAPSTONE_ARCHS=x86 \
+      CAPSTONE_SHARED=no \
+      CAPSTONE_BUILD_CORE_ONLY=yes \
+      ${MAKE} "$@";;
   "mac-universal" ) MACOS_UNIVERSAL=yes ${MAKE} "$@";;
   "mac-universal-no" ) MACOS_UNIVERSAL=no ${MAKE} "$@";;
+  "xlc31" ) CC=xlc CFLAGS=-q31 LDFLAGS=-q31 ${MAKE} "$@";;
+  "xlc32" ) CC=xlc CFLAGS=-q32 LDFLAGS=-q32 ${MAKE} "$@";;
+  "xlc64" ) CC=xlc CFLAGS=-q64 LDFLAGS=-q64 ${MAKE} "$@";;
   * )
     echo "Usage: $0 ["$(grep '^  "' $0 | cut -d '"' -f 2 | tr "\\n" "|")"]"
     exit 1;;
