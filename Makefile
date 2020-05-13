@@ -457,7 +457,6 @@ endif
 endif
 
 $(PKGCFGF):
-	@mkdir -p $(@D)
 ifeq ($(V),0)
 	$(call log,GEN,$(@:$(BLDIR)/%=%))
 	@$(generate-pkgcfg)
@@ -490,7 +489,9 @@ uninstall:
 	rm -rf $(DESTDIR)$(INCDIR)/$(LIBNAME)
 	rm -f $(LIBDIR)/lib$(LIBNAME).*
 	rm -f $(PKGCFGDIR)/$(LIBNAME).pc
+ifeq (,$(findstring yes,$(CAPSTONE_BUILD_CORE_ONLY)))
 	rm -f $(BINDIR)/cstool
+endif
 
 clean:
 	rm -f $(LIBOBJ)
@@ -498,9 +499,9 @@ clean:
 	rm -f $(PKGCFGF)
 	rm -f $(AUTODEPS)
 	[ "${ANDROID}" = "1" ] && rm -rf android-ndk-* || true
-	$(MAKE) -C cstool clean
 
 ifeq (,$(findstring yes,$(CAPSTONE_BUILD_CORE_ONLY)))
+	$(MAKE) -C cstool clean
 	$(MAKE) -C tests clean
 	$(MAKE) -C suite/fuzz clean
 	rm -f $(BLDIR)/tests/lib$(LIBNAME).$(EXT)
