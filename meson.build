@@ -105,12 +105,11 @@ capstone_dep = declare_dependency(
 )
 
 pkg = import('pkgconfig')
-pkg.generate(
+pkg.generate(capstone,
   name: 'capstone',
   description: 'Capstone disassembly engine',
   url: 'https://www.capstone-engine.org',
   subdirs: ['capstone'],
-  libraries: [capstone],
 )
 
 cli_option = get_option('cli')
