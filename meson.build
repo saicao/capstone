@@ -112,6 +112,8 @@ pkg.generate(capstone,
   subdirs: ['capstone'],
 )
 
+meson.override_dependency('capstone', capstone_dep)
+
 cli_option = get_option('cli')
 if cli_option.auto()
   cli_enabled = not meson.is_subproject()
