@@ -32,6 +32,7 @@ option('use_sys_dyn_mem',
 option('diet',
   type: 'boolean',
   value: false,
+  yield: true,
   description: 'Make the library more compact: use less memory & smaller in binary size'
 )
 
