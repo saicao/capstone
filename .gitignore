@@ -129,3 +129,6 @@ cstool/cstool
 
 # android
 android-ndk-*
+
+# Meson
+/subprojects/fadec/
