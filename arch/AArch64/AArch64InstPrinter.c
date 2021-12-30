@@ -43,6 +43,8 @@
 #include "AArch64Linkage.h"
 #include "AArch64Mapping.h"
 
+#ifndef CAPSTONE_TINY
+
 #define GET_BANKEDREG_IMPL
 #include "AArch64GenSystemOperands.inc"
 
@@ -2792,3 +2794,14 @@ const char *AArch64_LLVM_getRegisterName(unsigned RegNo, unsigned AltIdx) {
 void AArch64_LLVM_printInstruction(MCInst *MI, SStream *O, void * /* MCRegisterInfo* */ info) {
 	printInst(MI, MI->address, "", O);
 }
+
+#else
+
+const char *AArch64_LLVM_getRegisterName(unsigned RegNo, unsigned AltIdx) {
+	return NULL;
+}
+
+void AArch64_LLVM_printInstruction(MCInst *MI, SStream *O, void * /* MCRegisterInfo* */ info) {
+}
+
+#endif

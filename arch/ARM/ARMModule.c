@@ -12,18 +12,20 @@
 
 cs_err ARM_global_init(cs_struct *ud)
 {
+#ifndef CAPSTONE_TINY
 	MCRegisterInfo *mri;
 	mri = cs_mem_malloc(sizeof(*mri));
 
 	ARM_init_mri(mri);
 
-	ud->printer = ARM_printer;
 	ud->printer_info = mri;
 	ud->reg_name = ARM_reg_name;
-	ud->insn_id = ARM_get_insn_id;
 	ud->insn_name = ARM_insn_name;
 	ud->group_name = ARM_group_name;
 	ud->post_printer = NULL;
+#endif
+	ud->printer = ARM_printer;
+	ud->insn_id = ARM_get_insn_id;
 #ifndef CAPSTONE_DIET
 	ud->reg_access = ARM_reg_access;
 #endif

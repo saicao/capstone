@@ -19,6 +19,8 @@
 #include "AArch64Linkage.h"
 #include "AArch64Mapping.h"
 
+#ifndef CAPSTONE_TINY
+
 #ifndef CAPSTONE_DIET
 static aarch64_reg aarch64_flag_regs[] = {
 	AArch64_REG_NZCV,
@@ -86,7 +88,7 @@ void AArch64_init_mri(MCRegisterInfo *MRI)
 		AArch64RegDiffLists, 0, AArch64SubRegIdxLists, ARR_SIZE(AArch64SubRegIdxLists), 0);
 }
 
-const insn_map aarch64_insns[] = {
+static const insn_map aarch64_insns[] = {
 #include "AArch64GenCSMappingInsn.inc"
 };
 
@@ -223,6 +225,8 @@ const char *AArch64_reg_name(csh handle, unsigned int reg)
 	return AArch64_LLVM_getRegisterName(reg, AArch64_NoRegAltName);
 }
 
+#endif
+
 void AArch64_setup_op(cs_aarch64_op *op)
 {
 	memset(op, 0, sizeof(cs_aarch64_op));
@@ -240,6 +244,8 @@ void AArch64_init_cs_detail(MCInst *MI)
 		AArch64_get_detail(MI)->cc = AArch64CC_Invalid;
 	}
 }
+
+#ifndef CAPSTONE_TINY
 
 /// Unfortunately, the AArch64 definitions do not indicate in any way
 /// (exception are the instruction identifiers), if memory accesses
@@ -625,11 +631,11 @@ aarch64_insn AArch64_map_insn(const char *name)
 	return AArch64_INS_INVALID;
 }
 
-#ifndef CAPSTONE_DIET
-
 static const map_insn_ops insn_operands[] = {
 #include "AArch64GenCSMappingInsnOp.inc"
 };
+
+#ifndef CAPSTONE_DIET
 
 void AArch64_reg_access(const cs_insn *insn,
 		cs_regs regs_read, uint8_t *regs_read_count,
@@ -1420,7 +1426,9 @@ static void add_cs_detail_template_1(MCInst *MI, aarch64_op_group op_group,
 		}
 		AArch64_get_detail_op(MI, 0)->type = AArch64_OP_IMM;
 		AArch64_get_detail_op(MI, 0)->imm = prfop;
+#ifndef CAPSTONE_DIET
 		AArch64_get_detail_op(MI, 0)->access = map_get_op_access(MI, OpNum);
+#endif
 		AArch64_inc_op_count(MI);
 		break;
 	}
@@ -2299,5 +2307,26 @@ void AArch64_insert_detail_op_imm_at(MCInst *MI, unsigned index, int64_t Imm)
 
 	insert_op(MI, index, op);
 }
+
+#else
+
+void AArch64_get_insn_id(cs_struct *h, cs_insn *insn, unsigned int id)
+{
+}
+
+void AArch64_printer(MCInst *MI, SStream *O, void * /* MCRegisterInfo* */ info)
+{
+}
+
+bool AArch64_getInstruction(csh handle, const uint8_t *code, size_t code_len,
+						MCInst *MI, uint16_t *size, uint64_t address,
+						void *info)
+{
+	AArch64_init_cs_detail(MI);
+	return AArch64_LLVM_getInstruction(handle, code, code_len, MI, size, address,
+					   info) != MCDisassembler_Fail;
+}
+
+#endif
 
 #endif

@@ -42,6 +42,8 @@
 #include "AArch64Linkage.h"
 #include "AArch64Mapping.h"
 
+#ifndef CAPSTONE_TINY
+
 #define GET_INSTRINFO_MC_DESC
 #include "AArch64GenInstrInfo.inc"
 
@@ -2157,3 +2159,23 @@ static DecodeStatus DecodePRFMRegInstruction(MCInst *Inst, uint32_t insn,
 
 	return Success;
 }
+
+#else
+
+DecodeStatus AArch64_LLVM_getInstruction(csh handle, const uint8_t *Bytes,
+																				 size_t ByteLen,	MCInst *MI, uint16_t *Size, uint64_t Address,
+																				 void *Info)
+{
+	if (ByteLen < 4) {
+		// not enough data
+		*Size = 0;
+		return MCDisassembler_Fail;
+	}
+
+	MCInst_setOpcode(MI, AArch64_INS_ALIAS_END);
+	*Size = 4;
+
+	return MCDisassembler_Success;
+}
+
+#endif

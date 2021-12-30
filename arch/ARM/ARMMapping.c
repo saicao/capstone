@@ -22,6 +22,8 @@
 #include "ARMInstPrinter.h"
 #include "ARMMapping.h"
 
+#ifndef CAPSTONE_TINY
+
 static const name_map insn_alias_mnem_map[] = {
 	#include "ARMGenCSAliasMnemMap.inc"
 	{ ARM_INS_ALIAS_ASR, "asr" },
@@ -89,7 +91,7 @@ const char *ARM_reg_name(csh handle, unsigned int reg)
 	return ARM_LLVM_getRegisterName(reg, ARM_RegNamesRaw);
 }
 
-const insn_map arm_insns[] = {
+static const insn_map arm_insns[] = {
 #include "ARMGenCSMappingInsn.inc"
 };
 
@@ -814,6 +816,8 @@ void ARM_reg_access(const cs_insn *insn, cs_regs regs_read,
 }
 #endif
 
+#endif
+
 void ARM_setup_op(cs_arm_op *op)
 {
 	memset(op, 0, sizeof(cs_arm_op));
@@ -836,6 +840,8 @@ void ARM_init_cs_detail(MCInst *MI)
 		ARM_get_detail(MI)->vcc = ARMVCC_None;
 	}
 }
+
+#ifndef CAPSTONE_TINY
 
 static uint64_t t_add_pc(MCInst *MI, uint64_t v)
 {
@@ -2125,5 +2131,27 @@ void ARM_set_detail_op_float(MCInst *MI, unsigned OpNum, uint64_t Imm)
 	ARM_get_detail_op(MI, 0)->fp = ARM_AM_getFPImmFloat(Imm);
 	ARM_inc_op_count(MI);
 }
+
+#else
+
+void ARM_get_insn_id(cs_struct *h, cs_insn *insn, unsigned int id)
+{
+}
+
+void ARM_printer(MCInst *MI, SStream *O, void * /* MCRegisterInfo* */ info)
+{
+}
+
+bool ARM_getInstruction(csh handle, const uint8_t *code, size_t code_len,
+			MCInst *instr, uint16_t *size, uint64_t address,
+			void *info)
+{
+	ARM_init_cs_detail(instr);
+	return ARM_LLVM_getInstruction(handle, code, code_len, instr,
+				       size, address,
+				       info) != MCDisassembler_Fail;
+}
+
+#endif
 
 #endif

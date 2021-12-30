@@ -42,6 +42,8 @@
 #include "ARMLinkage.h"
 #include "ARMMapping.h"
 
+#ifndef CAPSTONE_TINY
+
 #define GET_BANKEDREG_IMPL
 #include "ARMGenSystemRegister.inc"
 
@@ -1973,3 +1975,12 @@ void ARM_LLVM_printInstruction(MCInst *MI, SStream *O,
 {
 	printInst(MI, O, info);
 }
+
+#else
+
+void ARM_LLVM_printInstruction(MCInst *MI, SStream *O,
+			       void * /* MCRegisterInfo* */ info)
+{
+}
+
+#endif

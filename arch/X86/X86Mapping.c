@@ -948,6 +948,8 @@ const char *X86_group_name(csh handle, unsigned int id)
 #endif
 }
 
+#ifndef CAPSTONE_TINY
+
 #define GET_INSTRINFO_ENUM
 #ifdef CAPSTONE_X86_REDUCE
 #include "X86GenInstrInfo_reduce.inc"
@@ -2243,5 +2245,14 @@ unsigned short X86_register_map(unsigned short id)
 
 	return 0;
 }
+
+#else
+
+void X86_get_insn_id(cs_struct *h, cs_insn *insn, unsigned int id)
+{
+	insn->id = id;
+}
+
+#endif
 
 #endif

@@ -141,3 +141,6 @@ android-ndk-*
 
 # python virtual env
 .venv/
+
+# Meson
+/subprojects/fadec/
