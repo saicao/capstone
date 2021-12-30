@@ -1142,6 +1142,7 @@ static void printTLSCall(MCInst *MI, unsigned OpNo, SStream *O)
 	set_mem_access(MI, false);
 }
 
+#ifndef CAPSTONE_DIET
 /// stripRegisterPrefix - This method strips the character prefix from a
 /// register name so that only the number is left.  Used by for linux asm.
 static char *stripRegisterPrefix(const char *RegName)
@@ -1170,6 +1171,7 @@ static char *stripRegisterPrefix(const char *RegName)
 
 	return cs_strdup(RegName);
 }
+#endif
 
 static void printOperand(MCInst *MI, unsigned OpNo, SStream *O)
 {

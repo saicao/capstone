@@ -946,6 +946,8 @@ const char *X86_group_name(csh handle, unsigned int id)
 #endif
 }
 
+#ifndef CAPSTONE_TINY
+
 #define GET_INSTRINFO_ENUM
 #ifdef CAPSTONE_X86_REDUCE
 #include "X86GenInstrInfo_reduce.inc"
@@ -1712,6 +1714,7 @@ static bool valid_bnd(cs_struct *h, unsigned int opcode)
 }
 #endif
 
+#ifndef CAPSTONE_DIET
 // return true if the opcode is XCHG [mem]
 static bool xchg_mem(unsigned int opcode)
 {
@@ -1725,6 +1728,7 @@ static bool xchg_mem(unsigned int opcode)
 				 return true;
 	}
 }
+#endif
 
 // given MCInst's id, find out if this insn is valid for REP prefix
 static bool valid_rep(cs_struct *h, unsigned int opcode)
@@ -1781,6 +1785,7 @@ static bool valid_rep(cs_struct *h, unsigned int opcode)
 	return false;
 }
 
+#ifndef CAPSTONE_DIET
 // given MCInst's id, find if this is a "repz ret" instruction
 // gcc generates "repz ret" (f3 c3) instructions in some cases as an
 // optimization for AMD platforms, see:
@@ -1798,6 +1803,7 @@ static bool valid_ret_repz(cs_struct *h, unsigned int opcode)
 	// not found
 	return false;
 }
+#endif
 
 // given MCInst's id, find out if this insn is valid for REPE prefix
 static bool valid_repe(cs_struct *h, unsigned int opcode)
@@ -2239,5 +2245,14 @@ unsigned short X86_register_map(unsigned short id)
 
 	return 0;
 }
+
+#else
+
+void X86_get_insn_id(cs_struct *h, cs_insn *insn, unsigned int id)
+{
+	insn->id = id;
+}
+
+#endif
 
 #endif
