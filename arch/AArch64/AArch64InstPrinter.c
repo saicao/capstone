@@ -32,6 +32,8 @@
 #include "AArch64Mapping.h"
 #include "AArch64AddressingModes.h"
 
+#ifndef CAPSTONE_TINY
+
 #define GET_REGINFO_ENUM
 #include "AArch64GenRegisterInfo.inc"
 
@@ -3018,5 +3020,17 @@ void AArch64_post_printer(csh handle, cs_insn *flat_insn, char *insn_asm, MCInst
 		}
 	}
 }
+
+#else
+
+void AArch64_printInst(MCInst *MI, SStream *O, void *Info)
+{
+}
+
+void AArch64_post_printer(csh handle, cs_insn *flat_insn, char *insn_asm, MCInst *mci)
+{
+}
+
+#endif
 
 #endif

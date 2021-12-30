@@ -293,11 +293,13 @@ cs_malloc_t cs_mem_malloc = malloc;
 cs_calloc_t cs_mem_calloc = calloc;
 cs_realloc_t cs_mem_realloc = realloc;
 cs_free_t cs_mem_free = free;
+#ifndef CAPSTONE_TINY
 #if defined(_WIN32_WCE)
 cs_vsnprintf_t cs_vsnprintf = _vsnprintf;
 #else
 cs_vsnprintf_t cs_vsnprintf = vsnprintf;
 #endif  // defined(_WIN32_WCE)
+#endif
 
 #elif defined(_KERNEL_MODE)
 // Windows driver
@@ -305,7 +307,9 @@ cs_malloc_t cs_mem_malloc = cs_winkernel_malloc;
 cs_calloc_t cs_mem_calloc = cs_winkernel_calloc;
 cs_realloc_t cs_mem_realloc = cs_winkernel_realloc;
 cs_free_t cs_mem_free = cs_winkernel_free;
+#ifndef CAPSTONE_TINY
 cs_vsnprintf_t cs_vsnprintf = cs_winkernel_vsnprintf;
+#endif
 #else
 // OSX kernel
 extern void* kern_os_malloc(size_t size);
@@ -321,7 +325,9 @@ cs_malloc_t cs_mem_malloc = kern_os_malloc;
 cs_calloc_t cs_mem_calloc = cs_kern_os_calloc;
 cs_realloc_t cs_mem_realloc = kern_os_realloc;
 cs_free_t cs_mem_free = kern_os_free;
+#ifndef CAPSTONE_TINY
 cs_vsnprintf_t cs_vsnprintf = vsnprintf;
+#endif
 #endif  // !defined(CAPSTONE_HAS_OSXKERNEL) && !defined(_KERNEL_MODE)
 #else
 // User-defined
@@ -329,7 +335,9 @@ cs_malloc_t cs_mem_malloc = NULL;
 cs_calloc_t cs_mem_calloc = NULL;
 cs_realloc_t cs_mem_realloc = NULL;
 cs_free_t cs_mem_free = NULL;
+#ifndef CAPSTONE_TINY
 cs_vsnprintf_t cs_vsnprintf = NULL;
+#endif
 
 #endif  // defined(CAPSTONE_USE_SYS_DYN_MEM)
 
@@ -436,7 +444,11 @@ cs_err CAPSTONE_API cs_open(cs_arch arch, cs_mode mode, csh *handle)
 {
 	cs_err err;
 	struct cs_struct *ud;
-	if (!cs_mem_malloc || !cs_mem_calloc || !cs_mem_realloc || !cs_mem_free || !cs_vsnprintf)
+	if (!cs_mem_malloc || !cs_mem_calloc || !cs_mem_realloc || !cs_mem_free
+#ifndef CAPSTONE_TINY
+			|| !cs_vsnprintf
+#endif
+			)
 		// Error: before cs_open(), dynamic memory management must be initialized
 		// with cs_option(CS_OPT_MEM)
 		return CS_ERR_MEMSETUP;
@@ -677,7 +689,9 @@ cs_err CAPSTONE_API cs_option(csh ud, cs_opt_type type, size_t value)
 		cs_mem_calloc = mem->calloc;
 		cs_mem_realloc = mem->realloc;
 		cs_mem_free = mem->free;
+#ifndef CAPSTONE_TINY
 		cs_vsnprintf = mem->vsnprintf;
+#endif
 
 		return CS_ERR_OK;
 	}
