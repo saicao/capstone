@@ -2002,7 +2002,6 @@ bool AArch64_getInstruction(csh opaque_ud, const uint8_t *code, size_t code_len,
 {
 	cs_struct *ud = (cs_struct *)opaque_ud;
 	cs_insn *ci = instr->flat_insn;
-	uint32_t insn;
 	size_t i;
 
 	if (code_len < 4) {
@@ -2016,13 +2015,6 @@ bool AArch64_getInstruction(csh opaque_ud, const uint8_t *code, size_t code_len,
 		for (i = 0; i < ARR_SIZE(ci->detail->arm64.operands); i++)
 			ci->detail->arm64.operands[i].vector_index = -1;
 	}
-
-	if (MODE_IS_BIG_ENDIAN(ud->mode))
-		insn = (code[3] << 0) | (code[2] << 8) |
-			(code[1] <<  16) | ((uint32_t) code[0] << 24);
-	else
-		insn = ((uint32_t) code[3] << 24) | (code[2] << 16) |
-			(code[1] <<  8) | (code[0] <<  0);
 
 	MCInst_setOpcode(instr, ARM64_INS_ENDING);
 	*size = 4;
