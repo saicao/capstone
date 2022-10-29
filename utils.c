@@ -91,7 +91,7 @@ unsigned int count_positive8(const unsigned char *list)
 
 char *cs_strdup(const char *str)
 {
-	size_t len = strlen(str)+ 1;
+	size_t len = strlen(str) + 1;
 	void *new = cs_mem_malloc(len);
 
 	if (new == NULL)
@@ -103,7 +103,6 @@ char *cs_strdup(const char *str)
 // we need this since Windows doesn't have snprintf()
 int cs_snprintf(char *buffer, size_t size, const char *fmt, ...)
 {
-#ifndef CAPSTONE_TINY
 	int ret;
 
 	va_list ap;
@@ -112,9 +111,6 @@ int cs_snprintf(char *buffer, size_t size, const char *fmt, ...)
 	va_end(ap);
 
 	return ret;
-#else
-	return -1;
-#endif
 }
 
 bool arr_exist8(unsigned char *arr, unsigned char max, unsigned int id)

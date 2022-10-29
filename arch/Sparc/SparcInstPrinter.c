@@ -20,7 +20,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#ifdef _MSC_VER
+#if defined (WIN32) || defined (WIN64) || defined (_WIN32) || defined (_WIN64)
 #pragma warning(disable:28719)		// disable MSVC's warning on strncpy()
 #endif
 

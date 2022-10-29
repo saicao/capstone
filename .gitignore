@@ -105,6 +105,8 @@ build*/
 
 # CMake build directories
 build*/
+/build
+/out
 
 # Xcode
 xcode/Capstone.xcodeproj/xcuserdata
@@ -116,6 +118,7 @@ test_arm_regression
 test_arm_regression.o
 fuzz_harness
 test_iter_benchmark
+test_file_benchmark
 fuzz_bindisasm
 fuzz_disasm
 fuzz_decode_platform
@@ -129,6 +132,3 @@ cstool/cstool
 
 # android
 android-ndk-*
-
-# Meson
-/subprojects/fadec/

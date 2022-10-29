@@ -57,6 +57,7 @@ __all__ = [
     'CS_MODE_QPX',
     'CS_MODE_SPE',
     'CS_MODE_BOOKE',
+    'CS_MODE_PS',
     'CS_MODE_M68K_000',
     'CS_MODE_M68K_010',
     'CS_MODE_M68K_020',
@@ -193,6 +194,7 @@ CS_MODE_V9 = (1 << 4)          # Sparc V9 mode (for Sparc)
 CS_MODE_QPX = (1 << 4)         # Quad Processing eXtensions mode (PPC)
 CS_MODE_SPE = (1 << 5)         # Signal Processing Engine mode (PPC)
 CS_MODE_BOOKE = (1 << 6)       # Book-E mode (PPC)
+CS_MODE_PS = (1 << 7)          # Paired-singles mode (PPC)
 CS_MODE_M68K_000 = (1 << 1)    # M68K 68000 mode
 CS_MODE_M68K_010 = (1 << 2)    # M68K 68010 mode
 CS_MODE_M68K_020 = (1 << 3)    # M68K 68020 mode
@@ -679,7 +681,7 @@ class CsInsn(object):
                 self.modrm, self.sib, self.disp, \
                 self.sib_index, self.sib_scale, self.sib_base, self.xop_cc, self.sse_cc, \
                 self.avx_cc, self.avx_sae, self.avx_rm, self.eflags, \
-                self.modrm_offset, self.disp_offset, self.disp_size, self.imm_offset, self.imm_size, \
+                self.encoding, self.modrm_offset, self.disp_offset, self.disp_size, self.imm_offset, self.imm_size, \
                 self.operands) = x86.get_arch_info(self._raw.detail.contents.arch.x86)
         elif arch == CS_ARCH_M68K:
                 (self.operands, self.op_size) = m68k.get_arch_info(self._raw.detail.contents.arch.m68k)

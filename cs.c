@@ -1,6 +1,6 @@
 /* Capstone Disassembly Engine */
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2013-2019 */
-#ifdef _MSC_VER
+#if defined (WIN32) || defined (WIN64) || defined (_WIN32) || defined (_WIN64)
 #pragma warning(disable:4996)			// disable MSVC's warning on strcpy()
 #pragma warning(disable:28719)		// disable MSVC's warning on strcpy()
 #endif
@@ -121,7 +121,7 @@ static const struct {
 		PPC_global_init,
 		PPC_option,
 		~(CS_MODE_LITTLE_ENDIAN | CS_MODE_32 | CS_MODE_64 | CS_MODE_BIG_ENDIAN
-				| CS_MODE_QPX),
+				| CS_MODE_QPX | CS_MODE_PS),
 	},
 #else
 	{ NULL, NULL, 0 },
@@ -285,31 +285,26 @@ static const uint32_t all_arch = 0
 #endif
 ;
 
-
 #if defined(CAPSTONE_USE_SYS_DYN_MEM)
 #if !defined(CAPSTONE_HAS_OSXKERNEL) && !defined(_KERNEL_MODE)
 // default
-cs_malloc_t cs_mem_malloc = malloc;
-cs_calloc_t cs_mem_calloc = calloc;
-cs_realloc_t cs_mem_realloc = realloc;
-cs_free_t cs_mem_free = free;
-#ifndef CAPSTONE_TINY
+thread_local cs_malloc_t cs_mem_malloc = malloc;
+thread_local cs_calloc_t cs_mem_calloc = calloc;
+thread_local cs_realloc_t cs_mem_realloc = realloc;
+thread_local cs_free_t cs_mem_free = free;
 #if defined(_WIN32_WCE)
-cs_vsnprintf_t cs_vsnprintf = _vsnprintf;
+thread_local cs_vsnprintf_t cs_vsnprintf = _vsnprintf;
 #else
-cs_vsnprintf_t cs_vsnprintf = vsnprintf;
+thread_local cs_vsnprintf_t cs_vsnprintf = vsnprintf;
 #endif  // defined(_WIN32_WCE)
-#endif
 
 #elif defined(_KERNEL_MODE)
 // Windows driver
-cs_malloc_t cs_mem_malloc = cs_winkernel_malloc;
-cs_calloc_t cs_mem_calloc = cs_winkernel_calloc;
-cs_realloc_t cs_mem_realloc = cs_winkernel_realloc;
-cs_free_t cs_mem_free = cs_winkernel_free;
-#ifndef CAPSTONE_TINY
-cs_vsnprintf_t cs_vsnprintf = cs_winkernel_vsnprintf;
-#endif
+thread_local cs_malloc_t cs_mem_malloc = cs_winkernel_malloc;
+thread_local cs_calloc_t cs_mem_calloc = cs_winkernel_calloc;
+thread_local cs_realloc_t cs_mem_realloc = cs_winkernel_realloc;
+thread_local cs_free_t cs_mem_free = cs_winkernel_free;
+thread_local cs_vsnprintf_t cs_vsnprintf = cs_winkernel_vsnprintf;
 #else
 // OSX kernel
 extern void* kern_os_malloc(size_t size);
@@ -321,23 +316,19 @@ static void* cs_kern_os_calloc(size_t num, size_t size)
 	return kern_os_malloc(num * size); // malloc bzeroes the buffer
 }
 
-cs_malloc_t cs_mem_malloc = kern_os_malloc;
-cs_calloc_t cs_mem_calloc = cs_kern_os_calloc;
-cs_realloc_t cs_mem_realloc = kern_os_realloc;
-cs_free_t cs_mem_free = kern_os_free;
-#ifndef CAPSTONE_TINY
-cs_vsnprintf_t cs_vsnprintf = vsnprintf;
-#endif
+thread_local cs_malloc_t cs_mem_malloc = kern_os_malloc;
+thread_local cs_calloc_t cs_mem_calloc = cs_kern_os_calloc;
+thread_local cs_realloc_t cs_mem_realloc = kern_os_realloc;
+thread_local cs_free_t cs_mem_free = kern_os_free;
+thread_local cs_vsnprintf_t cs_vsnprintf = vsnprintf;
 #endif  // !defined(CAPSTONE_HAS_OSXKERNEL) && !defined(_KERNEL_MODE)
 #else
 // User-defined
-cs_malloc_t cs_mem_malloc = NULL;
-cs_calloc_t cs_mem_calloc = NULL;
-cs_realloc_t cs_mem_realloc = NULL;
-cs_free_t cs_mem_free = NULL;
-#ifndef CAPSTONE_TINY
-cs_vsnprintf_t cs_vsnprintf = NULL;
-#endif
+thread_local cs_malloc_t cs_mem_malloc = NULL;
+thread_local cs_calloc_t cs_mem_calloc = NULL;
+thread_local cs_realloc_t cs_mem_realloc = NULL;
+thread_local cs_free_t cs_mem_free = NULL;
+thread_local cs_vsnprintf_t cs_vsnprintf = NULL;
 
 #endif  // defined(CAPSTONE_USE_SYS_DYN_MEM)
 
@@ -444,11 +435,7 @@ cs_err CAPSTONE_API cs_open(cs_arch arch, cs_mode mode, csh *handle)
 {
 	cs_err err;
 	struct cs_struct *ud;
-	if (!cs_mem_malloc || !cs_mem_calloc || !cs_mem_realloc || !cs_mem_free
-#ifndef CAPSTONE_TINY
-			|| !cs_vsnprintf
-#endif
-			)
+	if (!cs_mem_malloc || !cs_mem_calloc || !cs_mem_realloc || !cs_mem_free || !cs_vsnprintf)
 		// Error: before cs_open(), dynamic memory management must be initialized
 		// with cs_option(CS_OPT_MEM)
 		return CS_ERR_MEMSETUP;
@@ -529,7 +516,6 @@ cs_err CAPSTONE_API cs_close(csh *handle)
 // replace str1 in target with str2; target starts with str1
 // output is put into result (which is array of char with size CS_MNEMONIC_SIZE)
 // return 0 on success, -1 on failure
-#ifndef CAPSTONE_DIET
 static int str_replace(char *result, char *target, const char *str1, char *str2)
 {
 	// only perform replacement if the output fits into result
@@ -543,7 +529,6 @@ static int str_replace(char *result, char *target, const char *str1, char *str2)
 	} else
 		return -1;
 }
-#endif
 
 // fill insn with mnemonic & operands info
 static void fill_insn(struct cs_struct *handle, cs_insn *insn, char *buffer, MCInst *mci,
@@ -557,6 +542,7 @@ static void fill_insn(struct cs_struct *handle, cs_insn *insn, char *buffer, MCI
 	// fill the instruction bytes.
 	// we might skip some redundant bytes in front in the case of X86
 	memcpy(insn->bytes, code + insn->size - copy_size, copy_size);
+	insn->op_str[0] = '\0';
 	insn->size = copy_size;
 
 	// alias instruction might have ID saved in OpcodePub
@@ -568,8 +554,6 @@ static void fill_insn(struct cs_struct *handle, cs_insn *insn, char *buffer, MCI
 		postprinter((csh)handle, insn, buffer, mci);
 
 #ifndef CAPSTONE_DIET
-	// fill in mnemonic & operands
-	// find first space or tab
 	mnem = insn->mnemonic;
 	for (sp = buffer; *sp; sp++) {
 		if (*sp == ' '|| *sp == '\t')
@@ -611,6 +595,7 @@ static void fill_insn(struct cs_struct *handle, cs_insn *insn, char *buffer, MCI
 		insn->op_str[sizeof(insn->op_str) - 1] = '\0';
 	} else
 		insn->op_str[0] = '\0';
+
 #endif
 }
 
@@ -689,9 +674,7 @@ cs_err CAPSTONE_API cs_option(csh ud, cs_opt_type type, size_t value)
 		cs_mem_calloc = mem->calloc;
 		cs_mem_realloc = mem->realloc;
 		cs_mem_free = mem->free;
-#ifndef CAPSTONE_TINY
 		cs_vsnprintf = mem->vsnprintf;
-#endif
 
 		return CS_ERR_OK;
 	}
