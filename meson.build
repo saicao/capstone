@@ -1,5 +1,8 @@
 project('capstone', 'c',
   version: '5.0.0',
+  default_options: [
+    'c_std=c99',
+  ],
 )
 
 available_archs = {
