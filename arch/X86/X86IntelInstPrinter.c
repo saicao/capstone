@@ -17,7 +17,7 @@
 
 #ifdef CAPSTONE_HAS_X86
 
-#ifdef _MSC_VER
+#if defined (WIN32) || defined (WIN64) || defined (_WIN32) || defined (_WIN64)
 #pragma warning(disable:4996)			// disable MSVC's warning on strncpy()
 #pragma warning(disable:28719)		// disable MSVC's warning on strncpy()
 #endif
@@ -45,8 +45,6 @@
 #include "X86Mapping.h"
 #include "X86InstPrinterCommon.h"
 
-#ifndef CAPSTONE_TINY
-
 #define GET_INSTRINFO_ENUM
 #ifdef CAPSTONE_X86_REDUCE
 #include "X86GenInstrInfo_reduce.inc"
@@ -65,7 +63,7 @@ static void printOperand(MCInst *MI, unsigned OpNo, SStream *O);
 
 static void set_mem_access(MCInst *MI, bool status)
 {
-	if (MI->csh->detail != CS_OPT_ON)
+	if (MI->csh->detail_opt != CS_OPT_ON)
 		return;
 
 	MI->csh->doing_mem = status;
@@ -456,7 +454,7 @@ static void printSrcIdx(MCInst *MI, unsigned Op, SStream *O)
 	MCOperand *SegReg;
 	int reg;
 
-	if (MI->csh->detail) {
+	if (MI->csh->detail_opt) {
 #ifndef CAPSTONE_DIET
 		uint8_t access[6];
 #endif
@@ -481,7 +479,7 @@ static void printSrcIdx(MCInst *MI, unsigned Op, SStream *O)
 	// If this has a segment register, print it.
 	if (reg) {
 		_printOperand(MI, Op + 1, O);
-		if (MI->csh->detail) {
+		if (MI->csh->detail_opt) {
 			MI->flat_insn->detail->x86.operands[MI->flat_insn->detail->x86.op_count].mem.segment = X86_register_map(reg);
 		}
 		SStream_concat0(O, ":");
@@ -496,7 +494,7 @@ static void printSrcIdx(MCInst *MI, unsigned Op, SStream *O)
 
 static void printDstIdx(MCInst *MI, unsigned Op, SStream *O)
 {
-	if (MI->csh->detail) {
+	if (MI->csh->detail_opt) {
 #ifndef CAPSTONE_DIET
 		uint8_t access[6];
 #endif
@@ -518,7 +516,7 @@ static void printDstIdx(MCInst *MI, unsigned Op, SStream *O)
 	// DI accesses are always ES-based on non-64bit mode
 	if (MI->csh->mode != CS_MODE_64) {
 		SStream_concat0(O, "es:[");
-		if (MI->csh->detail) {
+		if (MI->csh->detail_opt) {
 			MI->flat_insn->detail->x86.operands[MI->flat_insn->detail->x86.op_count].mem.segment = X86_REG_ES;
 		}
 	} else
@@ -592,7 +590,7 @@ static void printMemOffset(MCInst *MI, unsigned Op, SStream *O)
 	MCOperand *SegReg = MCInst_getOperand(MI, Op + 1);
 	int reg;
 
-	if (MI->csh->detail) {
+	if (MI->csh->detail_opt) {
 #ifndef CAPSTONE_DIET
 		uint8_t access[6];
 #endif
@@ -616,7 +614,7 @@ static void printMemOffset(MCInst *MI, unsigned Op, SStream *O)
 	if (reg) {
 		_printOperand(MI, Op + 1, O);
 		SStream_concat0(O, ":");
-		if (MI->csh->detail) {
+		if (MI->csh->detail_opt) {
 			MI->flat_insn->detail->x86.operands[MI->flat_insn->detail->x86.op_count].mem.segment = X86_register_map(reg);
 		}
 	}
@@ -625,7 +623,7 @@ static void printMemOffset(MCInst *MI, unsigned Op, SStream *O)
 
 	if (MCOperand_isImm(DispSpec)) {
 		int64_t imm = MCOperand_getImm(DispSpec);
-		if (MI->csh->detail)
+		if (MI->csh->detail_opt)
 			MI->flat_insn->detail->x86.operands[MI->flat_insn->detail->x86.op_count].mem.disp = imm;
 
 		if (imm < 0)
@@ -636,7 +634,7 @@ static void printMemOffset(MCInst *MI, unsigned Op, SStream *O)
 
 	SStream_concat0(O, "]");
 
-	if (MI->csh->detail)
+	if (MI->csh->detail_opt)
 		MI->flat_insn->detail->x86.op_count++;
 
 	if (MI->op1_size == 0)
@@ -649,7 +647,7 @@ static void printU8Imm(MCInst *MI, unsigned Op, SStream *O)
 
 	printImm(MI, O, val, true);
 
-	if (MI->csh->detail) {
+	if (MI->csh->detail_opt) {
 #ifndef CAPSTONE_DIET
 		uint8_t access[6];
 #endif
@@ -714,7 +712,7 @@ void X86_Intel_printInst(MCInst *MI, SStream *O, void *Info)
 	printInstruction(MI, O);
 
 	reg = X86_insn_reg_intel(MCInst_getOpcode(MI), &access1);
-	if (MI->csh->detail) {
+	if (MI->csh->detail_opt) {
 #ifndef CAPSTONE_DIET
 		uint8_t access[6] = {0};
 #endif
@@ -771,7 +769,7 @@ static void printPCRelImm(MCInst *MI, unsigned OpNo, SStream *O)
 
 		printImm(MI, O, imm, true);
 
-		if (MI->csh->detail) {
+		if (MI->csh->detail_opt) {
 #ifndef CAPSTONE_DIET
 			uint8_t access[6];
 #endif
@@ -807,7 +805,7 @@ static void printOperand(MCInst *MI, unsigned OpNo, SStream *O)
 		unsigned int reg = MCOperand_getReg(Op);
 
 		printRegName(O, reg);
-		if (MI->csh->detail) {
+		if (MI->csh->detail_opt) {
 			if (MI->csh->doing_mem) {
 				MI->flat_insn->detail->x86.operands[MI->flat_insn->detail->x86.op_count].mem.base = X86_register_map(reg);
 			} else {
@@ -894,7 +892,7 @@ static void printOperand(MCInst *MI, unsigned OpNo, SStream *O)
 				break;
 		}
 
-		if (MI->csh->detail) {
+		if (MI->csh->detail_opt) {
 			if (MI->csh->doing_mem) {
 				MI->flat_insn->detail->x86.operands[MI->flat_insn->detail->x86.op_count].mem.disp = imm;
 			} else {
@@ -937,7 +935,7 @@ static void printMemReference(MCInst *MI, unsigned Op, SStream *O)
 	MCOperand *SegReg = MCInst_getOperand(MI, Op + X86_AddrSegmentReg);
 	int reg;
 
-	if (MI->csh->detail) {
+	if (MI->csh->detail_opt) {
 #ifndef CAPSTONE_DIET
 		uint8_t access[6];
 #endif
@@ -962,7 +960,7 @@ static void printMemReference(MCInst *MI, unsigned Op, SStream *O)
 	reg = MCOperand_getReg(SegReg);
 	if (reg) {
 		_printOperand(MI, Op + X86_AddrSegmentReg, O);
-		if (MI->csh->detail) {
+		if (MI->csh->detail_opt) {
 			MI->flat_insn->detail->x86.operands[MI->flat_insn->detail->x86.op_count].mem.segment = X86_register_map(reg);
 		}
 		SStream_concat0(O, ":");
@@ -985,7 +983,7 @@ static void printMemReference(MCInst *MI, unsigned Op, SStream *O)
 
 	if (MCOperand_isImm(DispSpec)) {
 		int64_t DispVal = MCOperand_getImm(DispSpec);
-		if (MI->csh->detail)
+		if (MI->csh->detail_opt)
 			MI->flat_insn->detail->x86.operands[MI->flat_insn->detail->x86.op_count].mem.disp = DispVal;
 		if (DispVal) {
 			if (NeedPlus) {
@@ -1016,7 +1014,7 @@ static void printMemReference(MCInst *MI, unsigned Op, SStream *O)
 
 	SStream_concat0(O, "]");
 
-	if (MI->csh->detail)
+	if (MI->csh->detail_opt)
 		MI->flat_insn->detail->x86.op_count++;
 
 	if (MI->op1_size == 0)
@@ -1037,7 +1035,6 @@ static void printanymem(MCInst *MI, unsigned OpNo, SStream *O)
 		case X86_LEA64r:
 				 MI->x86opsize = 8;
 				 break;
-#ifndef CAPSTONE_X86_REDUCE
 		case X86_BNDCL32rm:
 		case X86_BNDCN32rm:
 		case X86_BNDCU32rm:
@@ -1048,7 +1045,6 @@ static void printanymem(MCInst *MI, unsigned OpNo, SStream *O)
 		case X86_BNDCU64rm:
 				 MI->x86opsize = 16;
 				 break;
-#endif
 	}
 
 	printMemReference(MI, OpNo, O);
@@ -1061,13 +1057,5 @@ static void printanymem(MCInst *MI, unsigned OpNo, SStream *O)
 #endif
 
 #include "X86GenRegisterName1.inc"
-
-#else
-
-void X86_Intel_printInst(MCInst *MI, SStream *O, void *Info)
-{
-}
-
-#endif
 
 #endif

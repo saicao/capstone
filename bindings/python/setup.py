@@ -13,6 +13,10 @@ from distutils.command.build import build
 from distutils.command.sdist import sdist
 from setuptools.command.bdist_egg import bdist_egg
 
+PYTHON2 = sys.version_info[0] == 2
+if PYTHON2:
+    import io
+
 SYSTEM = sys.platform
 
 # adapted from commit e504b81 of Nguyen Tan Cong
@@ -52,7 +56,7 @@ if 'PKG_MAJOR' not in VERSION_DATA or \
     raise Exception("Malformed pkgconfig.mk")
 
 if 'PKG_TAG' in VERSION_DATA:
-    VERSION = '{PKG_MAJOR}.{PKG_MINOR}.{PKG_EXTRA}.{PKG_TAG}'.format(**VERSION_DATA)
+    VERSION = '{PKG_MAJOR}.{PKG_MINOR}.{PKG_EXTRA}{PKG_TAG}'.format(**VERSION_DATA)
 else:
     VERSION = '{PKG_MAJOR}.{PKG_MINOR}.{PKG_EXTRA}'.format(**VERSION_DATA)
 
@@ -123,6 +127,7 @@ def build_libraries():
     # if prebuilt libraries are available, use those and cancel build
     if os.path.exists(os.path.join(ROOT_DIR, 'prebuilt', LIBRARY_FILE)) and \
             (not STATIC_LIBRARY_FILE or os.path.exists(os.path.join(ROOT_DIR, 'prebuilt', STATIC_LIBRARY_FILE))):
+        log.info('Using prebuilt libraries')
         shutil.copy(os.path.join(ROOT_DIR, 'prebuilt', LIBRARY_FILE), LIBS_DIR)
         if STATIC_LIBRARY_FILE is not None:
             shutil.copy(os.path.join(ROOT_DIR, 'prebuilt', STATIC_LIBRARY_FILE), LIBS_DIR)
@@ -131,14 +136,19 @@ def build_libraries():
     os.chdir(BUILD_DIR)
 
     # platform description refers at https://docs.python.org/2/library/sys.html#sys.platform
-    if SYSTEM == "win32":
+    # Use cmake for both Darwin and Windows since it can generate fat binaries
+    if SYSTEM == "win32" or SYSTEM == 'darwin':
         # Windows build: this process requires few things:
         #    - CMake + MSVC installed
         #    - Run this command in an environment setup for MSVC
         if not os.path.exists("build"): os.mkdir("build")
         os.chdir("build")
-        # Only build capstone.dll
-        os.system('cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DCAPSTONE_BUILD_TESTS=OFF -DCAPSTONE_BUILD_CSTOOL=OFF -G "NMake Makefiles" ..')
+        print("Build Directory: {}\n".format(os.getcwd()))
+        # Only build capstone.dll / libcapstone.dylib
+        if SYSTEM == "win32":
+            os.system('cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DCAPSTONE_BUILD_TESTS=OFF -DCAPSTONE_BUILD_CSTOOL=OFF -G "NMake Makefiles" ..')
+        else:
+            os.system('cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DCAPSTONE_BUILD_TESTS=OFF -DCAPSTONE_BUILD_CSTOOL=OFF -G "Unix Makefiles" ..')
         os.system("cmake --build .")
     else:  # Unix incl. cygwin
         os.system("CAPSTONE_BUILD_CORE_ONLY=yes bash ./make.sh")
@@ -197,15 +207,9 @@ if 'bdist_wheel' in sys.argv and '--plat-name' not in sys.argv:
     idx = sys.argv.index('bdist_wheel') + 1
     sys.argv.insert(idx, '--plat-name')
     name = get_platform()
-    if 'linux' in name:
-        # linux_* platform tags are disallowed because the python ecosystem is fubar
-        # linux builds should be built in the centos 5 vm for maximum compatibility
-        # see https://github.com/pypa/manylinux
-        # see also https://github.com/angr/angr-dev/blob/master/bdist.sh
-        sys.argv.insert(idx + 1, 'manylinux1_' + platform.machine())
-    else:
-        # https://www.python.org/dev/peps/pep-0425/
-        sys.argv.insert(idx + 1, name.replace('.', '_').replace('-', '_'))
+    pyversion = platform.python_version()
+    major_version, minor_version = map(int, pyversion.split('.')[:2])
+    sys.argv.insert(idx + 1, name.replace('.', '_').replace('-', '_') + "_" + str(major_version) + str(minor_version))
 
 setup(
     provides=['capstone'],
@@ -215,7 +219,9 @@ setup(
     author='Nguyen Anh Quynh',
     author_email='aquynh@gmail.com',
     description='Capstone disassembly engine',
-    url='http://www.capstone-engine.org',
+    url='https://www.capstone-engine.org',
+    long_description=io.open('README.txt', encoding="utf8").read() if PYTHON2 else open('README.txt', encoding="utf8").read(),
+    long_description_content_type='text/markdown',
     python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*',
     classifiers=[
         'License :: OSI Approved :: BSD License',

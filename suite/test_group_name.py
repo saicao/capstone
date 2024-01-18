@@ -70,16 +70,16 @@ arm_dict = {
 }
 
 arm64_dict = {
-    ARM64_GRP_JUMP: "jump",
-    ARM64_GRP_CALL: "call",
-    ARM64_GRP_RET: "return",
-    ARM64_GRP_INT: "int",
-    ARM64_GRP_PRIVILEGE: "privilege",
+    AARCH64_GRP_JUMP: "jump",
+    AARCH64_GRP_CALL: "call",
+    AARCH64_GRP_RET: "return",
+    AARCH64_GRP_INT: "int",
+    AARCH64_GRP_PRIVILEGE: "privilege",
 
-    ARM64_GRP_CRYPTO: "crypto",
-    ARM64_GRP_FPARMV8: "fparmv8",
-    ARM64_GRP_NEON: "neon",
-    ARM64_GRP_CRC: "crc"
+    AARCH64_GRP_CRYPTO: "crypto",
+    AARCH64_GRP_FPARMV8: "fparmv8",
+    AARCH64_GRP_NEON: "neon",
+    AARCH64_GRP_CRC: "crc"
 }
 
 mips_dict = {
@@ -228,6 +228,12 @@ xcore_dict = {
 
 riscv32_dict = {
     RISCV_GRP_JUMP       : "jump",
+    RISCV_GRP_CALL       : "call",
+    RISCV_GRP_RET        : "ret",
+    RISCV_GRP_INT        : "int",
+    RISCV_GRP_IRET       : "iret",
+    RISCV_GRP_PRIVILEGE  : "privileged",
+    RISCV_GRP_BRANCH_RELATIVE: "branch_relative",
     RISCV_GRP_ISRV32     : "isrv32",
     RISCV_GRP_HASSTDEXTA : "hasstdexta",
     RISCV_GRP_HASSTDEXTC : "hasstdextc",
@@ -238,6 +244,12 @@ riscv32_dict = {
 
 riscv64_dict = {    
     RISCV_GRP_JUMP       : "jump",
+    RISCV_GRP_CALL       : "call",
+    RISCV_GRP_RET        : "ret",
+    RISCV_GRP_INT        : "int",
+    RISCV_GRP_IRET       : "iret",
+    RISCV_GRP_PRIVILEGE  : "privileged",
+    RISCV_GRP_BRANCH_RELATIVE: "branch_relative",
     RISCV_GRP_ISRV64     : "isrv64",
     RISCV_GRP_HASSTDEXTA : "hasstdexta",
     RISCV_GRP_HASSTDEXTC : "hasstdextc",
@@ -248,7 +260,7 @@ riscv64_dict = {
 
 tests = [
     GroupTest('arm', CS_ARCH_ARM, CS_MODE_THUMB, arm_dict),
-    GroupTest('arm64', CS_ARCH_ARM64, CS_MODE_ARM, arm64_dict),
+    GroupTest('arm64', CS_ARCH_AARCH64, CS_MODE_ARM, arm64_dict),
     GroupTest('mips', CS_ARCH_MIPS, CS_MODE_MIPS32 | CS_MODE_BIG_ENDIAN, mips_dict),
     GroupTest('ppc', CS_ARCH_PPC, CS_MODE_BIG_ENDIAN, ppc_dict),
     GroupTest('sparc', CS_ARCH_SPARC, CS_MODE_BIG_ENDIAN, sparc_dict),

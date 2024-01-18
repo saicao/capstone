@@ -24,7 +24,7 @@ MIPS_CODE = b"\x0C\x10\x00\x97\x00\x00\x00\x00\x24\x02\x00\x0c\x8f\xa2\x00\x00\x
 MIPS_CODE2 = b"\x56\x34\x21\x34\xc2\x17\x01\x00"
 MIPS_32R6M = b"\x00\x07\x00\x07\x00\x11\x93\x7c\x01\x8c\x8b\x7c\x00\xc7\x48\xd0"
 MIPS_32R6 = b"\xec\x80\x00\x19\x7c\x43\x22\xa0"
-ARM64_CODE = b"\x21\x7c\x02\x9b\x21\x7c\x00\x53\x00\x40\x21\x4b\xe1\x0b\x40\xb9"
+AARCH64_CODE = b"\x21\x7c\x02\x9b\x21\x7c\x00\x53\x00\x40\x21\x4b\xe1\x0b\x40\xb9"
 PPC_CODE = b"\x80\x20\x00\x00\x80\x3f\x00\x00\x10\x43\x23\x0e\xd0\x44\x00\x80\x4c\x43\x22\x02\x2d\x03\x00\x80\x7c\x43\x20\x14\x7c\x43\x20\x93\x4f\x20\x00\x21\x4c\xc8\x00\x21"
 PPC_CODE2 = b"\x10\x60\x2a\x10\x10\x64\x28\x88\x7c\x4a\x5d\x0f"
 SPARC_CODE = b"\x80\xa0\x40\x02\x85\xc2\x60\x08\x85\xe8\x20\x01\x81\xe8\x00\x00\x90\x10\x20\x01\xd5\xf6\x10\x16\x21\x00\x00\x0a\x86\x00\x40\x02\x01\x00\x00\x00\x12\xbf\xff\xff\x10\xbf\xff\xff\xa0\x02\x00\x09\x0d\xbf\xff\xff\xd4\x20\x60\x00\xd4\x4e\x00\x16\x2a\xc2\x80\x03"
@@ -34,8 +34,14 @@ XCORE_CODE = b"\xfe\x0f\xfe\x17\x13\x17\xc6\xfe\xec\x17\x97\xf8\xec\x4f\x1f\xfd\
 M68K_CODE = b"\xd4\x40\x87\x5a\x4e\x71\x02\xb4\xc0\xde\xc0\xde\x5c\x00\x1d\x80\x71\x12\x01\x23\xf2\x3c\x44\x22\x40\x49\x0e\x56\x54\xc5\xf2\x3c\x44\x00\x44\x7a\x00\x00\xf2\x00\x0a\x28\x4E\xB9\x00\x00\x00\x12\x4E\x75"
 TMS320C64X_CODE = b"\x01\xac\x88\x40\x81\xac\x88\x43\x00\x00\x00\x00\x02\x90\x32\x96\x02\x80\x46\x9e\x05\x3c\x83\xe6\x0b\x0c\x8b\x24"
 M680X_CODE = b"\x06\x10\x19\x1a\x55\x1e\x01\x23\xe9\x31\x06\x34\x55\xa6\x81\xa7\x89\x7f\xff\xa6\x9d\x10\x00\xa7\x91\xa6\x9f\x10\x00\x11\xac\x99\x10\x00\x39"
+EVM_CODE = b"\x60\x61"
+WASM_CODE = b"\x20\x00\x20\x01\x41\x20\x10\xc9\x01\x45\x0b"
+MOS65XX_CODE = b"\x0d\x34\x12\x00\x81\x65\x6c\x01\x00\x85\xFF\x10\x00\x19\x42\x42\x00\x49\x42"
+EBPF_CODE = b"\x97\x09\x00\x00\x37\x13\x03\x00\xdc\x02\x00\x00\x20\x00\x00\x00\x30\x00\x00\x00\x00\x00\x00\x00\xdb\x3a\x00\x01\x00\x00\x00\x00\x84\x02\x00\x00\x00\x00\x00\x00\x6d\x33\x17\x02\x00\x00\x00\x00"
 RISCV_CODE32 = b"\x37\x34\x00\x00\x97\x82\x00\x00\xef\x00\x80\x00\xef\xf0\x1f\xff\xe7\x00\x45\x00\xe7\x00\xc0\xff\x63\x05\x41\x00\xe3\x9d\x61\xfe\x63\xca\x93\x00\x63\x53\xb5\x00\x63\x65\xd6\x00\x63\x76\xf7\x00\x03\x88\x18\x00\x03\x99\x49\x00\x03\xaa\x6a\x00\x03\xcb\x2b\x01\x03\xdc\x8c\x01\x23\x86\xad\x03\x23\x9a\xce\x03\x23\x8f\xef\x01\x93\x00\xe0\x00\x13\xa1\x01\x01\x13\xb2\x02\x7d\x13\xc3\x03\xdd\x13\xe4\xc4\x12\x13\xf5\x85\x0c\x13\x96\xe6\x01\x13\xd7\x97\x01\x13\xd8\xf8\x40\x33\x89\x49\x01\xb3\x0a\x7b\x41\x33\xac\xac\x01\xb3\x3d\xde\x01\x33\xd2\x62\x40\xb3\x43\x94\x00\x33\xe5\xc5\x00\xb3\x76\xf7\x00\xb3\x54\x39\x01\xb3\x50\x31\x00\x33\x9f\x0f\x00"
 RISCV_CODE64 = b"\x13\x04\xa8\x7a"
+ALPHA_CODE = b'\x02\x00\xbb\x27\x50\x7a\xbd\x23\xd0\xff\xde\x23\x00\x00\x5e\xb7'
+ALPHA_CODE_BE = b'\x27\xbb\x00\x02\x23\xbd\x7a\x50\x23\xde\xff\xd0\xb7\x5e\x00\x00'
 
 
 all_tests = (
@@ -54,19 +60,25 @@ all_tests = (
         (CS_ARCH_MIPS, CS_MODE_MIPS64 + CS_MODE_LITTLE_ENDIAN, MIPS_CODE2, "MIPS-64-EL (Little-endian)", None),
         (CS_ARCH_MIPS, CS_MODE_MIPS32R6 + CS_MODE_MICRO + CS_MODE_BIG_ENDIAN, MIPS_32R6M, "MIPS-32R6 | Micro (Big-endian)", None),
         (CS_ARCH_MIPS, CS_MODE_MIPS32R6 + CS_MODE_BIG_ENDIAN, MIPS_32R6, "MIPS-32R6 (Big-endian)", None),
-        (CS_ARCH_ARM64, CS_MODE_ARM, ARM64_CODE, "ARM-64", None),
+        (CS_ARCH_AARCH64, CS_MODE_ARM, AARCH64_CODE, "AARCH64", None),
         (CS_ARCH_PPC, CS_MODE_BIG_ENDIAN, PPC_CODE, "PPC-64", None),
         (CS_ARCH_PPC, CS_MODE_BIG_ENDIAN, PPC_CODE, "PPC-64, print register with number only", CS_OPT_SYNTAX_NOREGNAME),
-        (CS_ARCH_PPC, CS_MODE_BIG_ENDIAN + CS_MODE_QPX, PPC_CODE2, "PPC-64 + QPX", CS_OPT_SYNTAX_NOREGNAME),
+        (CS_ARCH_PPC, CS_MODE_BIG_ENDIAN + CS_MODE_QPX, PPC_CODE2, "PPC-64 + QPX", None),
         (CS_ARCH_SPARC, CS_MODE_BIG_ENDIAN, SPARC_CODE, "Sparc", None),
         (CS_ARCH_SPARC, CS_MODE_BIG_ENDIAN + CS_MODE_V9, SPARCV9_CODE, "SparcV9", None),
         (CS_ARCH_SYSZ, 0, SYSZ_CODE, "SystemZ", None),
         (CS_ARCH_XCORE, 0, XCORE_CODE, "XCore", None),
-        (CS_ARCH_M68K, CS_MODE_BIG_ENDIAN | CS_MODE_M68K_040, M68K_CODE, "M68K (68040)", None),
+        (CS_ARCH_M68K, CS_MODE_BIG_ENDIAN | CS_MODE_M68K_040, M68K_CODE, "M68K", None),
         (CS_ARCH_TMS320C64X, 0, TMS320C64X_CODE, "TMS320C64x", None),
         (CS_ARCH_M680X, CS_MODE_M680X_6809, M680X_CODE, "M680X_M6809", None),
-        (CS_ARCH_RISCV, CS_MODE_RISCV32, RISCV_CODE32, "riscv32", None),
-        (CS_ARCH_RISCV, CS_MODE_RISCV64, RISCV_CODE64, "riscv64", None),
+        (CS_ARCH_EVM, 0, EVM_CODE, "EVM", None),
+        (CS_ARCH_WASM, 0, WASM_CODE, "WASM", None),
+        (CS_ARCH_MOS65XX, 0, MOS65XX_CODE, "MOS65XX", None),
+        (CS_ARCH_BPF, CS_MODE_LITTLE_ENDIAN | CS_MODE_BPF_EXTENDED, EBPF_CODE, "eBPF", None),
+        (CS_ARCH_RISCV, CS_MODE_RISCV32, RISCV_CODE32, "RISCV32", None),
+        (CS_ARCH_RISCV, CS_MODE_RISCV64, RISCV_CODE64, "RISCV64", None),
+        (CS_ARCH_ALPHA, CS_MODE_LITTLE_ENDIAN, ALPHA_CODE, "Alpha (Little-endian)", None),
+        (CS_ARCH_ALPHA, CS_MODE_BIG_ENDIAN, ALPHA_CODE_BE, "Alpha (Big-endian)", None),
 )
 
 # ## Test cs_disasm_quick()
@@ -74,7 +86,7 @@ def test_cs_disasm_quick():
     for arch, mode, code, comment, syntax in all_tests:
         print('*' * 40)
         print("Platform: %s" % comment)
-        print("Disasm:"),
+        print("Disasm:")
         print(to_hex(code))
         for insn in cs_disasm_quick(arch, mode, code, 0x1000):
             print("0x%x:\t%s\t%s" % (insn.address, insn.mnemonic, insn.op_str))
@@ -82,7 +94,10 @@ def test_cs_disasm_quick():
 
 
 def test_different_data_formats():
-    data = bytes.fromhex('4831C948F7E1043B48BB0A2F62696E2F2F736852530A545F5257545E0F05')
+    if _python3:
+        data = bytes.fromhex('4831C948F7E1043B48BB0A2F62696E2F2F736852530A545F5257545E0F05')
+    else:
+        data = bytes(bytearray.fromhex('4831C948F7E1043B48BB0A2F62696E2F2F736852530A545F5257545E0F05'))
     mnemonics = ['xor', 'mul', 'add', 'movabs', 'push', 'pop', 'push', 'push', 'push', 'pop', 'syscall']
     disassembler = Cs(CS_ARCH_X86, CS_MODE_64)
     for name, code in (
@@ -114,7 +129,7 @@ def test_class():
             for insn in md.disasm(code, 0x1000):
                 # bytes = binascii.hexlify(insn.bytes)
                 # print("0x%x:\t%s\t%s\t// hex-code: %s" %(insn.address, insn.mnemonic, insn.op_str, bytes))
-                print("0x%x:\t%s\t%s" % (insn.address, insn.mnemonic, insn.op_str))
+                print("0x%x:\t%s\t\t%s" % (insn.address, insn.mnemonic, insn.op_str))
 
             print("0x%x:" % (insn.address + insn.size))
             print()

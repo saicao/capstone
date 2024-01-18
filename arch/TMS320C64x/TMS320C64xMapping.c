@@ -6,6 +6,7 @@
 #include <stdio.h>	// debug
 #include <string.h>
 
+#include "../../Mapping.h"
 #include "../../utils.h"
 
 #include "TMS320C64xMapping.h"
@@ -1697,7 +1698,7 @@ void TMS320C64x_get_insn_id(cs_struct *h, cs_insn *insn, unsigned int id)
 	if (i != 0) {
 		insn->id = insns[i].mapid;
 
-		if (h->detail) {
+		if (h->detail_opt) {
 #ifndef CAPSTONE_DIET
 			memcpy(insn->detail->regs_read, insns[i].regs_use, sizeof(insns[i].regs_use));
 			insn->detail->regs_read_count = (uint8_t)count_positive(insns[i].regs_use);
@@ -1898,7 +1899,7 @@ const char *TMS320C64x_group_name(csh handle, unsigned int id)
 #ifndef CAPSTONE_DIET
 	unsigned int i;
 
-	if (id >= TMS320C64X_GRP_ENDING)
+	if (id >= ARR_SIZE(group_name_maps))
 		return NULL;
 
 	for (i = 0; i < ARR_SIZE(group_name_maps); i++) {

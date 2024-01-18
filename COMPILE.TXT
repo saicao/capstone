@@ -85,6 +85,7 @@ Capstone requires no prerequisite packages, so it is easy to compile & install.
 
 	/usr/include/capstone/arm.h
 	/usr/include/capstone/arm64.h
+	/usr/include/capstone/alpha.h
 	/usr/include/capstone/bpf.h
 	/usr/include/capstone/capstone.h
 	/usr/include/capstone/evm.h
@@ -100,6 +101,7 @@ Capstone requires no prerequisite packages, so it is easy to compile & install.
 	/usr/include/capstone/wasm.h
 	/usr/include/capstone/x86.h
 	/usr/include/capstone/xcore.h
+	/usr/include/capstone/tricore.h
 	/usr/lib/libcapstone.a
 	/usr/lib/libcapstone.so (for Linux/*nix), or /usr/lib/libcapstone.dylib (OSX)
 
@@ -147,7 +149,7 @@ Capstone requires no prerequisite packages, so it is easy to compile & install.
 (5) Cross-compile for Android
 
   To cross-compile for Android (smartphone/tablet), Android NDK is required.
-  NOTE: Only ARM and ARM64 are currently supported.
+  NOTE: Only ARM and AARCH64 are currently supported.
 
 	$ NDK=/android/android-ndk-r10e ./make.sh cross-android arm
   or

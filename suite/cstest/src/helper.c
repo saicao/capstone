@@ -108,7 +108,7 @@ void add_str(char **src, const char *format, ...)
 void replace_hex(char *src)
 {
 	char *tmp, *result, *found, *origin, *orig_found;
-	int i, valid;
+	int valid;
 	unsigned long long int value;
 	char *tmp_tmp;
 
@@ -155,7 +155,7 @@ void replace_hex(char *src)
 void replace_negative(char *src, int mode)
 {
 	char *tmp, *result, *found, *origin, *orig_found;
-	int i, cnt, valid;
+	int cnt, valid;
 	char *value, *tmp_tmp;
 	unsigned short int tmp_short;
 	unsigned int tmp_int;
@@ -259,6 +259,31 @@ void trim_str(char *str)
 
 	for (i = start; i <= end; ++i)
 		tmp[j++] = str[i];
+
+	tmp[j] = '\0';
+	strcpy(str, tmp);
+
+	return;
+}
+
+void replace_tabs(char *str)
+{
+	char tmp[MAXMEM];
+	bool space_char = false;
+
+	int j = 0;
+	for (int i = 0; i <= strlen(str); ++i) {
+		if (str[i] == ' ' || str[i] == '\t') {
+			space_char = true;
+			continue;
+		}
+		if (space_char) {
+			space_char = false;
+			tmp[j++] = ' ';
+		}
+
+		tmp[j++] = str[i];
+	}
 
 	tmp[j] = '\0';
 	strcpy(str, tmp);

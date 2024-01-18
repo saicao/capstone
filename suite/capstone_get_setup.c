@@ -22,7 +22,7 @@ int main()
 	if (cs_support(CS_ARCH_ARM)) {
 		printf("arm=1 ");
 	}
-	if (cs_support(CS_ARCH_ARM64)) {
+	if (cs_support(CS_ARCH_AARCH64)) {
 		printf("arm64=1 ");
 	}
 	if (cs_support(CS_ARCH_MIPS)) {
@@ -69,6 +69,12 @@ int main()
 	}
 	if (cs_support(CS_SUPPORT_X86_REDUCE)) {
 		printf("x86_reduce=1 ");
+	}
+	if (cs_support(CS_ARCH_TRICORE)) {
+		printf("tricore=1 ");
+	}
+	if (cs_support(CS_ARCH_ALPHA)) {
+		printf("alpha=1 ");
 	}
 	printf("\n");
 

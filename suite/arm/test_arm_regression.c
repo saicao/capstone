@@ -35,7 +35,7 @@ static char *hex_string(unsigned char *str, size_t len)
 	if (!hex_out) { goto Exit; }
 
 	for (i = 0; i < len; ++i) {
-		snprintf(hex_out + (i*2), 2, "%02x", str[i]);
+		snprintf(hex_out + (i * 2), 3, "%02x", str[i]);
 	}
 
 	hex_out[len*2] = 0; // trailing null
@@ -46,8 +46,6 @@ Exit:
 
 static void snprint_insn_detail(char * buf, size_t * cur, size_t * left, cs_insn *ins)
 {
-	size_t used = 0;
-
 #define _this_printf(...) \
 	{ \
 		size_t used = 0; \
@@ -77,17 +75,17 @@ static void snprint_insn_detail(char * buf, size_t * cur, size_t * left, cs_insn
 				_this_printf("\t\toperands[%u].type: REG = %s\n", i, cs_reg_name(handle, op->reg));
 				break;
 			case ARM_OP_IMM:
-				_this_printf("\t\toperands[%u].type: IMM = 0x%x\n", i, op->imm);
+				_this_printf("\t\toperands[%u].type: IMM = 0x%" PRIx64 "\n", i, op->imm);
 				break;
 			case ARM_OP_FP:
 				_this_printf("\t\toperands[%u].type: FP = %f\n", i, op->fp);
 				break;
 			case ARM_OP_MEM:
 				_this_printf("\t\toperands[%u].type: MEM\n", i);
-				if (op->mem.base != X86_REG_INVALID)
+				if (op->mem.base != ARM_REG_INVALID)
 					_this_printf("\t\t\toperands[%u].mem.base: REG = %s\n",
 							i, cs_reg_name(handle, op->mem.base));
-				if (op->mem.index != X86_REG_INVALID)
+				if (op->mem.index != ARM_REG_INVALID)
 					_this_printf("\t\t\toperands[%u].mem.index: REG = %s\n",
 							i, cs_reg_name(handle, op->mem.index));
 				if (op->mem.scale != 1)
@@ -97,10 +95,10 @@ static void snprint_insn_detail(char * buf, size_t * cur, size_t * left, cs_insn
 
 				break;
 			case ARM_OP_PIMM:
-				_this_printf("\t\toperands[%u].type: P-IMM = %u\n", i, op->imm);
+				_this_printf("\t\toperands[%u].type: P-IMM = %" PRIu64 "\n", i, op->imm);
 				break;
 			case ARM_OP_CIMM:
-				_this_printf("\t\toperands[%u].type: C-IMM = %u\n", i, op->imm);
+				_this_printf("\t\toperands[%u].type: C-IMM = %" PRIu64 "\n", i, op->imm);
 				break;
 		}
 
@@ -116,7 +114,7 @@ static void snprint_insn_detail(char * buf, size_t * cur, size_t * left, cs_insn
 		}
 	}
 
-	if (arm->cc != ARM_CC_AL && arm->cc != ARM_CC_INVALID) {
+	if (arm->cc != ARMCC_AL && arm->cc != ARMCC_UNDEF) {
 		_this_printf("\tCode condition: %u\n", arm->cc);
 	}
 
@@ -124,7 +122,7 @@ static void snprint_insn_detail(char * buf, size_t * cur, size_t * left, cs_insn
 		_this_printf("\tUpdate-flags: True\n");
 	}
 
-	if (arm->writeback) {
+	if (ins->detail->writeback) {
 		_this_printf("\tWrite-back: True\n");
 	}
 
@@ -286,9 +284,8 @@ static void test_valids()
 		}
 	}};
 
-	struct valid_instructions * valid = NULL;
+	struct valid_instructions *valid = NULL;
 
-	uint64_t address = 0x1000;
 	cs_insn *insn;
 	int i;
 	int j;
@@ -323,8 +320,6 @@ static void test_valids()
 			char tmp_buf[2048];
 			size_t left = 2048;
 			size_t cur = 0;
-			size_t used = 0;
-			int success = 0;
 			char * hex_str = NULL;
 
 			struct valid_code * valid_code = NULL;

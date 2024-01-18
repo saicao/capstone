@@ -8,64 +8,9 @@
 #include <stdlib.h>
 #endif
 #include <string.h>
+#include <ctype.h>
 
 #include "utils.h"
-
-// create a cache for fast id lookup
-static unsigned short *make_id2insn(const insn_map *insns, unsigned int size)
-{
-	// NOTE: assume that the max id is always put at the end of insns array
-	unsigned short max_id = insns[size - 1].id;
-	unsigned short i;
-
-	unsigned short *cache = (unsigned short *)cs_mem_calloc(max_id + 1, sizeof(*cache));
-
-	for (i = 1; i < size; i++)
-		cache[insns[i].id] = i;
-
-	return cache;
-}
-
-// look for @id in @insns, given its size in @max. first time call will update @cache.
-// return 0 if not found
-unsigned short insn_find(const insn_map *insns, unsigned int max, unsigned int id, unsigned short **cache)
-{
-	if (id > insns[max - 1].id)
-		return 0;
-
-	if (*cache == NULL)
-		*cache = make_id2insn(insns, max);
-
-	return (*cache)[id];
-}
-
-int name2id(const name_map* map, int max, const char *name)
-{
-	int i;
-
-	for (i = 0; i < max; i++) {
-		if (!strcmp(map[i].name, name)) {
-			return map[i].id;
-		}
-	}
-
-	// nothing match
-	return -1;
-}
-
-const char *id2name(const name_map* map, int max, const unsigned int id)
-{
-	int i;
-
-	for (i = 0; i < max; i++) {
-		if (map[i].id == id) {
-			return map[i].name;
-		}
-	}
-
-	// nothing match
-	return NULL;
-}
 
 // count number of positive members in a list.
 // NOTE: list must be guaranteed to end in 0
@@ -103,7 +48,6 @@ char *cs_strdup(const char *str)
 // we need this since Windows doesn't have snprintf()
 int cs_snprintf(char *buffer, size_t size, const char *fmt, ...)
 {
-#ifndef CAPSTONE_TINY
 	int ret;
 
 	va_list ap;
@@ -112,9 +56,6 @@ int cs_snprintf(char *buffer, size_t size, const char *fmt, ...)
 	va_end(ap);
 
 	return ret;
-#else
-	return -1;
-#endif
 }
 
 bool arr_exist8(unsigned char *arr, unsigned char max, unsigned int id)
@@ -141,33 +82,47 @@ bool arr_exist(uint16_t *arr, unsigned char max, unsigned int id)
 	return false;
 }
 
-// binary search for encoding in IndexType array
-// return -1 if not found, or index if found
-unsigned int binsearch_IndexTypeEncoding(const struct IndexType *index, size_t size, uint16_t encoding)
+/// Reads 4 bytes in the endian order specified in MI->cs->mode.
+uint32_t readBytes32(MCInst *MI, const uint8_t *Bytes)
 {
-	// binary searching since the index is sorted in encoding order
-	size_t left, right, m;
+	assert(MI && Bytes);
+	uint32_t Insn;
+	if (MODE_IS_BIG_ENDIAN(MI->csh->mode))
+		Insn = (Bytes[3] << 0) | (Bytes[2] << 8) | (Bytes[1] << 16) |
+		       ((uint32_t)Bytes[0] << 24);
+	else
+		Insn = ((uint32_t)Bytes[3] << 24) | (Bytes[2] << 16) |
+		       (Bytes[1] << 8) | (Bytes[0] << 0);
+	return Insn;
+}
 
-	right = size - 1;
+/// Reads 2 bytes in the endian order specified in MI->cs->mode.
+uint16_t readBytes16(MCInst *MI, const uint8_t *Bytes)
+{
+	assert(MI && Bytes);
+	uint16_t Insn;
+	if (MODE_IS_BIG_ENDIAN(MI->csh->mode))
+		Insn = (Bytes[0] << 8) | Bytes[1];
+	else
+		Insn = (Bytes[1] << 8) | Bytes[0];
 
-	if (encoding < index[0].encoding || encoding > index[right].encoding)
-		// not found
-		return -1;
+	return Insn;
+}
 
-	left = 0;
-
-	while(left <= right) {
-		m = (left + right) / 2;
-		if (encoding == index[m].encoding) {
-			return m;
-		}
-
-		if (encoding < index[m].encoding)
-			right = m - 1;
-		else
-			left = m + 1;
+/// @brief Appends the string @p src to the string @p str. @p src is put to lower case.
+/// @param str The string to append to.
+/// @param str_size The lengt of @p str
+/// @param src The string to append.
+void append_to_str_lower(char *str, size_t str_size, const char *src) {
+	char *dest = strchr(str, '\0');
+	if (dest - str >= str_size) {
+		assert("str_size does not match actual string length." && 0);
+		return;
 	}
 
-	// not found
-	return -1;
+	int i = dest - str;
+	for (int j = 0; (i < str_size) && (j < strlen(src)); ++i, ++j) {
+		str[i] = tolower(src[j]);
+	}
+	str[i] = '\0';
 }
