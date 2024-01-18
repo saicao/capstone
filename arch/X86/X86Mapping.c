@@ -946,8 +946,6 @@ const char *X86_group_name(csh handle, unsigned int id)
 #endif
 }
 
-#ifndef CAPSTONE_TINY
-
 #define GET_INSTRINFO_ENUM
 #ifdef CAPSTONE_X86_REDUCE
 #include "X86GenInstrInfo_reduce.inc"
@@ -1783,6 +1781,24 @@ static bool valid_rep(cs_struct *h, unsigned int opcode)
 	return false;
 }
 
+// given MCInst's id, find if this is a "repz ret" instruction
+// gcc generates "repz ret" (f3 c3) instructions in some cases as an
+// optimization for AMD platforms, see:
+// https://gcc.gnu.org/legacy-ml/gcc-patches/2003-05/msg02117.html
+static bool valid_ret_repz(cs_struct *h, unsigned int opcode)
+{
+	unsigned int id;
+	unsigned int i = find_insn(opcode);
+
+	if (i != -1) {
+		id = insns[i].mapid;
+		return id == X86_INS_RET;
+	}
+
+	// not found
+	return false;
+}
+
 // given MCInst's id, find out if this insn is valid for REPE prefix
 static bool valid_repe(cs_struct *h, unsigned int opcode)
 {
@@ -1814,6 +1830,27 @@ static bool valid_repe(cs_struct *h, unsigned int opcode)
 				if (opcode == X86_SCASL) // REP SCASD
 					return true;
 				return false;
+		}
+	}
+
+	// not found
+	return false;
+}
+
+// Given MCInst's id, find out if this insn is valid for NOTRACK prefix.
+// NOTRACK prefix is valid for CALL/JMP.
+static bool valid_notrack(cs_struct *h, unsigned int opcode)
+{
+	unsigned int id;
+	unsigned int i = find_insn(opcode);
+	if (i != -1) {
+		id = insns[i].mapid;
+		switch(id) {
+			default:
+				return false;
+			case X86_INS_CALL:
+			case X86_INS_JMP:
+				return true;
 		}
 	}
 
@@ -1916,6 +1953,8 @@ bool X86_lockrep(MCInst *MI, SStream *O)
 			} else if (valid_repe(MI->csh, opcode)) {
 				SStream_concat(O, "repe|");
 				add_cx(MI);
+			} else if (valid_ret_repz(MI->csh, opcode)) {
+				SStream_concat(O, "repz|");
 			} else {
 				// invalid prefix
 				MI->x86_prefix[0] = 0;
@@ -1946,6 +1985,17 @@ bool X86_lockrep(MCInst *MI, SStream *O)
 #endif
 #endif
 #endif
+			break;
+	}
+
+	switch(MI->x86_prefix[1]) {
+		default:
+			break;
+		case 0x3e:
+			opcode = MCInst_getOpcode(MI);
+			if (valid_notrack(MI->csh, opcode)) {
+				SStream_concat(O, "notrack|");
+			}
 			break;
 	}
 
@@ -2189,14 +2239,5 @@ unsigned short X86_register_map(unsigned short id)
 
 	return 0;
 }
-
-#else
-
-void X86_get_insn_id(cs_struct *h, cs_insn *insn, unsigned int id)
-{
-	insn->id = id;
-}
-
-#endif
 
 #endif

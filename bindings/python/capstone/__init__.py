@@ -35,9 +35,12 @@ __all__ = [
     'CS_ARCH_TMS320C64X',
     'CS_ARCH_M680X',
     'CS_ARCH_EVM',
+    'CS_ARCH_MOS65XX',
+    'CS_ARCH_WASM',
     'CS_ARCH_BPF',
     'CS_ARCH_RISCV',
-    'CS_ARCH_MOS65XX',
+    'CS_ARCH_SH',
+    'CS_ARCH_TRICORE',
     'CS_ARCH_ALL',
 
     'CS_MODE_LITTLE_ENDIAN',
@@ -88,6 +91,20 @@ __all__ = [
     'CS_MODE_MOS65XX_65816_LONG_M',
     'CS_MODE_MOS65XX_65816_LONG_X',
     'CS_MODE_MOS65XX_65816_LONG_MX',
+    'CS_MODE_SH2',
+    'CS_MODE_SH2A',
+    'CS_MODE_SH3',
+    'CS_MODE_SH4',
+    'CS_MODE_SH4A',
+    'CS_MODE_SHFPU',
+    'CS_MODE_SHDSP',
+    'CS_MODE_TRICORE_110',
+    'CS_MODE_TRICORE_120',
+    'CS_MODE_TRICORE_130',
+    'CS_MODE_TRICORE_131',
+    'CS_MODE_TRICORE_160',
+    'CS_MODE_TRICORE_161',
+    'CS_MODE_TRICORE_162',
 
     'CS_OPT_SYNTAX',
     'CS_OPT_SYNTAX_DEFAULT',
@@ -101,6 +118,14 @@ __all__ = [
     'CS_OPT_MODE',
     'CS_OPT_ON',
     'CS_OPT_OFF',
+
+    'CS_OPT_INVALID',
+    'CS_OPT_MEM',
+    'CS_OPT_SKIPDATA',
+    'CS_OPT_SKIPDATA_SETUP',
+    'CS_OPT_MNEMONIC',
+    'CS_OPT_UNSIGNED',
+    'CS_OPT_NO_BRANCH_OFFSET',
 
     'CS_ERR_OK',
     'CS_ERR_MEM',
@@ -116,6 +141,7 @@ __all__ = [
     'CS_ERR_SKIPDATA',
     'CS_ERR_X86_ATT',
     'CS_ERR_X86_INTEL',
+    'CS_ERR_X86_MASM',
 
     'CS_SUPPORT_DIET',
     'CS_SUPPORT_X86_REDUCE',
@@ -124,8 +150,8 @@ __all__ = [
     'CS_OP_INVALID',
     'CS_OP_REG',
     'CS_OP_IMM',
-    'CS_OP_MEM',
     'CS_OP_FP',
+    'CS_OP_MEM',
 
     'CS_GRP_INVALID',
     'CS_GRP_JUMP',
@@ -134,6 +160,7 @@ __all__ = [
     'CS_GRP_INT',
     'CS_GRP_IRET',
     'CS_GRP_PRIVILEGE',
+    'CS_GRP_BRANCH_RELATIVE',
 
     'CS_AC_INVALID',
     'CS_AC_READ',
@@ -153,7 +180,7 @@ CS_API_MINOR = 0
 # Package version
 CS_VERSION_MAJOR = CS_API_MAJOR
 CS_VERSION_MINOR = CS_API_MINOR
-CS_VERSION_EXTRA = 0
+CS_VERSION_EXTRA = 1
 
 __version__ = "%u.%u.%u" %(CS_VERSION_MAJOR, CS_VERSION_MINOR, CS_VERSION_EXTRA)
 
@@ -174,7 +201,9 @@ CS_ARCH_MOS65XX = 12
 CS_ARCH_WASM = 13
 CS_ARCH_BPF = 14
 CS_ARCH_RISCV = 15
-CS_ARCH_MAX = 16
+CS_ARCH_SH = 16
+CS_ARCH_TRICORE = 17
+CS_ARCH_MAX = 18
 CS_ARCH_ALL = 0xFFFF
 
 # disasm mode
@@ -226,8 +255,23 @@ CS_MODE_MOS65XX_65816 = (1 << 4) # MOS65XXX WDC 65816, 8-bit m/x
 CS_MODE_MOS65XX_65816_LONG_M = (1 << 5) # MOS65XXX WDC 65816, 16-bit m, 8-bit x 
 CS_MODE_MOS65XX_65816_LONG_X = (1 << 6) # MOS65XXX WDC 65816, 8-bit m, 16-bit x
 CS_MODE_MOS65XX_65816_LONG_MX = CS_MODE_MOS65XX_65816_LONG_M | CS_MODE_MOS65XX_65816_LONG_X
+CS_MODE_SH2 = 1 << 1   # SH2
+CS_MODE_SH2A = 1 << 2  # SH2A
+CS_MODE_SH3 = 1 << 3   # SH3
+CS_MODE_SH4 = 1 << 4   # SH4
+CS_MODE_SH4A = 1 << 5  # SH4A
+CS_MODE_SHFPU = 1 << 6 # w/ FPU
+CS_MODE_SHDSP = 1 << 7 # w/ DSP
+CS_MODE_TRICORE_110 = 1 << 1 # Tricore 1.1
+CS_MODE_TRICORE_120 = 1 << 2 # Tricore 1.2
+CS_MODE_TRICORE_130 = 1 << 3 # Tricore 1.3
+CS_MODE_TRICORE_131 = 1 << 4 # Tricore 1.3.1
+CS_MODE_TRICORE_160 = 1 << 5 # Tricore 1.6
+CS_MODE_TRICORE_161 = 1 << 6 # Tricore 1.6.1
+CS_MODE_TRICORE_162 = 1 << 7 # Tricore 1.6.2
 
 # Capstone option type
+CS_OPT_INVALID = 0   # No option specified
 CS_OPT_SYNTAX = 1    # Intel X86 asm syntax (CS_ARCH_X86 arch)
 CS_OPT_DETAIL = 2    # Break down instruction structure into details
 CS_OPT_MODE = 3      # Change engine's mode at run-time
@@ -236,17 +280,18 @@ CS_OPT_SKIPDATA = 5  # Skip data when disassembling
 CS_OPT_SKIPDATA_SETUP = 6      # Setup user-defined function for SKIPDATA option
 CS_OPT_MNEMONIC = 7  # Customize instruction mnemonic
 CS_OPT_UNSIGNED = 8  # Print immediate in unsigned form
+CS_OPT_NO_BRANCH_OFFSET = 9  # ARM, prints branch immediates without offset.
 
 # Capstone option value
 CS_OPT_OFF = 0             # Turn OFF an option - default option of CS_OPT_DETAIL
 CS_OPT_ON = 3              # Turn ON an option (CS_OPT_DETAIL)
 
 # Common instruction operand types - to be consistent across all architectures.
-CS_OP_INVALID = 0
-CS_OP_REG = 1
-CS_OP_IMM = 2
-CS_OP_MEM = 3
-CS_OP_FP  = 4
+CS_OP_INVALID = 0  # uninitialized/invalid operand.
+CS_OP_REG = 1  # Register operand.
+CS_OP_IMM = 2  # Immediate operand.
+CS_OP_FP  = 3  # Floating-Point operand.
+CS_OP_MEM = 0x80  # Memory operand. Can be ORed with another operand type.
 
 # Common instruction groups - to be consistent across all architectures.
 CS_GRP_INVALID = 0  # uninitialized/invalid group.
@@ -256,6 +301,7 @@ CS_GRP_RET     = 3  # all return instructions
 CS_GRP_INT     = 4  # all interrupt instructions (int+syscall)
 CS_GRP_IRET    = 5  # all interrupt return instructions
 CS_GRP_PRIVILEGE = 6  # all privileged instructions
+CS_GRP_BRANCH_RELATIVE = 7 # all relative branching instructions
 
 # Access types for instruction operands.
 CS_AC_INVALID  = 0        # Invalid/unitialized access type.
@@ -323,10 +369,10 @@ def _load_lib(path):
     if os.path.exists(lib_file):
         return ctypes.cdll.LoadLibrary(lib_file)
     else:
-        # if we're on linux, try again with .so.4 extension
+        # if we're on linux, try again with .so.5 extension
         if lib_file.endswith('.so'):
-            if os.path.exists(lib_file + '.4'):
-                return ctypes.cdll.LoadLibrary(lib_file + '.4')
+            if os.path.exists(lib_file + '.{}'.format(CS_VERSION_MAJOR)):
+                return ctypes.cdll.LoadLibrary(lib_file + '.{}'.format(CS_VERSION_MAJOR))
     return None
 
 _cs = None
@@ -366,7 +412,7 @@ def copy_ctypes_list(src):
     return [copy_ctypes(n) for n in src]
 
 # Weird import placement because these modules are needed by the below code but need the above functions
-from . import arm, arm64, m68k, mips, ppc, sparc, systemz, x86, xcore, tms320c64x, m680x, evm, mos65xx, bpf, riscv
+from . import arm, arm64, m68k, mips, ppc, sparc, systemz, x86, xcore, tms320c64x, m680x, evm, mos65xx, wasm, bpf, riscv, sh, tricore
 
 class _cs_arch(ctypes.Union):
     _fields_ = (
@@ -383,18 +429,22 @@ class _cs_arch(ctypes.Union):
         ('m680x', m680x.CsM680x),
         ('evm', evm.CsEvm),
         ('mos65xx', mos65xx.CsMOS65xx),
+        ('wasm', wasm.CsWasm),
         ('bpf', bpf.CsBPF),
         ('riscv', riscv.CsRISCV),
+        ('sh', sh.CsSH),
+        ('tricore', tricore.CsTriCore),
     )
 
 class _cs_detail(ctypes.Structure):
     _fields_ = (
-        ('regs_read', ctypes.c_uint16 * 16),
+        ('regs_read', ctypes.c_uint16 * 20),
         ('regs_read_count', ctypes.c_ubyte),
         ('regs_write', ctypes.c_uint16 * 20),
         ('regs_write_count', ctypes.c_ubyte),
         ('groups', ctypes.c_ubyte * 8),
         ('groups_count', ctypes.c_ubyte),
+        ('writeback', ctypes.c_bool),
         ('arch', _cs_arch),
     )
 
@@ -672,15 +722,15 @@ class CsInsn(object):
         arch = self._cs.arch
         if arch == CS_ARCH_ARM:
             (self.usermode, self.vector_size, self.vector_data, self.cps_mode, self.cps_flag, self.cc, self.update_flags, \
-            self.writeback, self.mem_barrier, self.operands) = arm.get_arch_info(self._raw.detail.contents.arch.arm) 
+            self.writeback, self.post_index, self.mem_barrier, self.operands) = arm.get_arch_info(self._raw.detail.contents.arch.arm) 
         elif arch == CS_ARCH_ARM64:
-            (self.cc, self.update_flags, self.writeback, self.operands) = \
+            (self.cc, self.update_flags, self.writeback, self.post_index, self.operands) = \
                 arm64.get_arch_info(self._raw.detail.contents.arch.arm64)
         elif arch == CS_ARCH_X86:
             (self.prefix, self.opcode, self.rex, self.addr_size, \
                 self.modrm, self.sib, self.disp, \
                 self.sib_index, self.sib_scale, self.sib_base, self.xop_cc, self.sse_cc, \
-                self.avx_cc, self.avx_sae, self.avx_rm, self.eflags, \
+                self.avx_cc, self.avx_sae, self.avx_rm, self.eflags, self.fpu_flags, \
                 self.encoding, self.modrm_offset, self.disp_offset, self.disp_size, self.imm_offset, self.imm_size, \
                 self.operands) = x86.get_arch_info(self._raw.detail.contents.arch.x86)
         elif arch == CS_ARCH_M68K:
@@ -704,10 +754,16 @@ class CsInsn(object):
             (self.pop, self.push, self.fee) = evm.get_arch_info(self._raw.detail.contents.arch.evm)
         elif arch == CS_ARCH_MOS65XX:
             (self.am, self.modifies_flags, self.operands) = mos65xx.get_arch_info(self._raw.detail.contents.arch.mos65xx)
+        elif arch == CS_ARCH_WASM:
+            (self.operands) = wasm.get_arch_info(self._raw.detail.contents.arch.wasm)
         elif arch == CS_ARCH_BPF:
             (self.operands) = bpf.get_arch_info(self._raw.detail.contents.arch.bpf)
         elif arch == CS_ARCH_RISCV:
-            (self.operands) = riscv.get_arch_info(self._raw.detail.contents.arch.riscv)
+            (self.need_effective_addr, self.operands) = riscv.get_arch_info(self._raw.detail.contents.arch.riscv)
+        elif arch == CS_ARCH_SH:
+            (self.sh_insn, self.sh_size, self.operands) = sh.get_arch_info(self._raw.detail.contents.arch.sh)
+        elif arch == CS_ARCH_TRICORE:
+            (self.update_flags, self.operands) = tricore.get_arch_info(self._raw.detail.contents.arch.tricore)
 
 
     def __getattr__(self, name):
@@ -860,7 +916,7 @@ class Cs(object):
             raise CsError(status)
 
         try:
-            import ccapstone
+            from . import ccapstone
             # rewire disasm to use the faster version
             self.disasm = ccapstone.Cs(self).disasm
         except:
@@ -1173,7 +1229,8 @@ def debug():
         "mips": CS_ARCH_MIPS, "ppc": CS_ARCH_PPC, "sparc": CS_ARCH_SPARC,
         "sysz": CS_ARCH_SYSZ, 'xcore': CS_ARCH_XCORE, "tms320c64x": CS_ARCH_TMS320C64X,
         "m680x": CS_ARCH_M680X, 'evm': CS_ARCH_EVM, 'mos65xx': CS_ARCH_MOS65XX,
-        'bpf': CS_ARCH_BPF, 'riscv': CS_ARCH_RISCV,
+        'bpf': CS_ARCH_BPF, 'riscv': CS_ARCH_RISCV, 'tricore': CS_ARCH_TRICORE,
+        'wasm': CS_ARCH_WASM, 'sh': CS_ARCH_SH,
     }
 
     all_archs = ""

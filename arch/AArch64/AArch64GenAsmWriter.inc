@@ -17,6 +17,7 @@ static uint64_t getMnemonic(MCInst *MI, SStream *O, unsigned int opcode) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Woverlength-strings"
 #endif
+
 #ifndef CAPSTONE_DIET
   static const char AsmStrs[] = {
   /* 0 */ "sha1su0\t\0"
@@ -1131,6 +1132,8 @@ static uint64_t getMnemonic(MCInst *MI, SStream *O, unsigned int opcode) {
   /* 8739 */ "ld1w\t{\0"
   /* 8746 */ "st1w\t{\0"
 };
+#endif
+
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
@@ -7480,7 +7483,6 @@ static uint64_t getMnemonic(MCInst *MI, SStream *O, unsigned int opcode) {
     138527510U,	// anonymous_5384
     138527511U,	// anonymous_5385
   };
-#endif
 
   static const uint32_t OpInfo1[] = {
     0U,	// PHI
@@ -13832,7 +13834,9 @@ static uint64_t getMnemonic(MCInst *MI, SStream *O, unsigned int opcode) {
   uint64_t Bits = 0;
   Bits |= (uint64_t)OpInfo0[opcode] << 0;
   Bits |= (uint64_t)OpInfo1[opcode] << 32;
+#ifndef CAPSTONE_DIET
 	SStream_concat0(O, AsmStrs+(Bits & 16383)-1);
+#endif
 	return Bits;
 
 }
@@ -13849,7 +13853,7 @@ static void printInstruction(MCInst *MI, SStream *O)
 
   // Fragment 0 encoded into 7 bits for 68 unique commands.
   // printf("Fragment 0: %"PRIu64"\n", ((Bits >> 14) & 127));
-  switch ((uint32_t)((Bits >> 14) & 127)) {
+  switch ((Bits >> 14) & 127) {
   default: // unreachable
   case 0:
     // DBG_VALUE, DBG_VALUE_LIST, DBG_INSTR_REF, DBG_PHI, DBG_LABEL, BUNDLE, ...
@@ -14396,7 +14400,7 @@ static void printInstruction(MCInst *MI, SStream *O)
 
   // Fragment 1 encoded into 7 bits for 69 unique commands.
   // printf("Fragment 1: %"PRIu64"\n", ((Bits >> 21) & 127));
-  switch ((uint32_t)((Bits >> 21) & 127)) {
+  switch ((Bits >> 21) & 127) {
   default: // unreachable
   case 0:
     // TLSDESCCALL, AUTDZA, AUTDZB, AUTIZA, AUTIZB, BLR, BLRAAZ, BLRABZ, BR, ...
@@ -14757,7 +14761,7 @@ static void printInstruction(MCInst *MI, SStream *O)
 
   // Fragment 2 encoded into 7 bits for 69 unique commands.
   // printf("Fragment 2: %"PRIu64"\n", ((Bits >> 28) & 127));
-  switch ((uint32_t)((Bits >> 28) & 127)) {
+  switch ((Bits >> 28) & 127) {
   default: // unreachable
   case 0:
     // ABS_ZPmZ_B, ABS_ZPmZ_D, ABS_ZPmZ_S, BRKA_PPmP, BRKB_PPmP, CLS_ZPmZ_B, ...
@@ -15131,7 +15135,7 @@ static void printInstruction(MCInst *MI, SStream *O)
 
   // Fragment 3 encoded into 7 bits for 111 unique commands.
   // printf("Fragment 3: %"PRIu64"\n", ((Bits >> 35) & 127));
-  switch ((uint32_t)((Bits >> 35) & 127)) {
+  switch ((Bits >> 35) & 127) {
   default: // unreachable
   case 0:
     // ABS_ZPmZ_B, BRKA_PPmP, BRKB_PPmP, CDOT_ZZZI_S, CDOT_ZZZ_S, CLS_ZPmZ_B,...
@@ -15812,7 +15816,7 @@ static void printInstruction(MCInst *MI, SStream *O)
 
   // Fragment 4 encoded into 7 bits for 94 unique commands.
   // printf("Fragment 4: %"PRIu64"\n", ((Bits >> 42) & 127));
-  switch ((uint32_t)((Bits >> 42) & 127)) {
+  switch ((Bits >> 42) & 127) {
   default: // unreachable
   case 0:
     // ABS_ZPmZ_B, ADD_ZZZ_H, BDEP_ZZZ_H, BEXT_ZZZ_H, BGRP_ZZZ_H, BRKA_PPmP, ...
@@ -16388,7 +16392,7 @@ static void printInstruction(MCInst *MI, SStream *O)
 
   // Fragment 5 encoded into 6 bits for 41 unique commands.
   // printf("Fragment 5: %"PRIu64"\n", ((Bits >> 49) & 63));
-  switch ((uint32_t)((Bits >> 49) & 63)) {
+  switch ((Bits >> 49) & 63) {
   default: // unreachable
   case 0:
     // ADCLB_ZZZ_D, ADCLB_ZZZ_S, ADCLT_ZZZ_D, ADCLT_ZZZ_S, ADCSWr, ADCSXr, AD...
@@ -16621,7 +16625,7 @@ static void printInstruction(MCInst *MI, SStream *O)
 
   // Fragment 6 encoded into 6 bits for 37 unique commands.
   // printf("Fragment 6: %"PRIu64"\n", ((Bits >> 55) & 63));
-  switch ((uint32_t)((Bits >> 55) & 63)) {
+  switch ((Bits >> 55) & 63) {
   default: // unreachable
   case 0:
     // ADDG, ASRD_ZPmI_B, ASRD_ZPmI_D, ASRD_ZPmI_S, ASR_ZPmI_B, ASR_ZPmI_D, A...
@@ -16828,7 +16832,7 @@ static void printInstruction(MCInst *MI, SStream *O)
 
   // Fragment 7 encoded into 3 bits for 7 unique commands.
   // printf("Fragment 7: %"PRIu64"\n", ((Bits >> 61) & 7));
-  switch ((uint32_t)((Bits >> 61) & 7)) {
+  switch ((Bits >> 61) & 7) {
   default: // unreachable
   case 0:
     // ADDP_ZPmZ_D, ADDP_ZPmZ_S, ADD_ZPmZ_D, ADD_ZPmZ_S, AND_ZPmZ_D, AND_ZPmZ...

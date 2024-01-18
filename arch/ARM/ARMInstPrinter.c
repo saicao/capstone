@@ -31,8 +31,6 @@
 #include "../../utils.h"
 #include "ARMMapping.h"
 
-#ifndef CAPSTONE_TINY
-
 #define GET_SUBTARGETINFO_ENUM
 #include "ARMGenSubtargetInfo.inc"
 
@@ -320,7 +318,8 @@ void ARM_post_printer(csh ud, cs_insn *insn, char *insn_asm, MCInst *mci)
 			case ARM_t2STRD_PRE:
 			case ARM_t2STRH_PRE:
 			case ARM_t2STR_PRE:
-
+				insn->detail->arm.writeback = true;
+				break;
 			case ARM_t2LDC2L_POST:
 			case ARM_t2LDC2_POST:
 			case ARM_t2LDCL_POST:
@@ -343,6 +342,7 @@ void ARM_post_printer(csh ud, cs_insn *insn, char *insn_asm, MCInst *mci)
 			case ARM_t2STRH_POST:
 			case ARM_t2STR_POST:
 				insn->detail->arm.writeback = true;
+				insn->detail->arm.post_index = true;
 				break;
 		}
 	} else {	// ARM mode
@@ -368,7 +368,8 @@ void ARM_post_printer(csh ud, cs_insn *insn, char *insn_asm, MCInst *mci)
 
 			case ARM_STRD_PRE:
 			case ARM_STRH_PRE:
-
+				insn->detail->arm.writeback = true;
+				break;
 			case ARM_LDC2L_POST:
 			case ARM_LDC2_POST:
 			case ARM_LDCL_POST:
@@ -396,8 +397,8 @@ void ARM_post_printer(csh ud, cs_insn *insn, char *insn_asm, MCInst *mci)
 
 			case ARM_STR_POST_IMM:
 			case ARM_STR_POST_REG:
-
 				insn->detail->arm.writeback = true;
+				insn->detail->arm.post_index = true;
 				break;
 		}
 	}
@@ -3359,13 +3360,5 @@ void ARM_addSysReg(MCInst *MI, arm_sysreg reg)
 		MI->flat_insn->detail->arm.op_count++;
 	}
 }
-
-#else
-
-void ARM_printInst(MCInst *MI, SStream *O, void *Info)
-{
-}
-
-#endif
 
 #endif

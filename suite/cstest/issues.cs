@@ -1,3 +1,47 @@
+!# issue 2062 repz Prefix
+!# CS_ARCH_X86, CS_MODE_64, CS_OPT_DETAIL
+0xf3,0xc3 == repz ret ; Prefix:0xf3 0x00 0x00 0x00
+
+!# issue 2007 RISCV64 instruction groups
+!# CS_ARCH_RISCV, CS_MODE_RISCV64, CS_OPT_DETAIL
+0x63,0x04,0x03,0x00 == beqz t1, 8 ; op_count: 2 ; operands[0].type: REG = t1 ; operands[1].type: IMM = 0x8 ; Groups: branch_relative jump
+
+!# issue 2007 RISCV64 instruction groups
+!# CS_ARCH_RISCV, CS_MODE_RISCV64, CS_OPT_DETAIL
+0x73,0x00,0x00,0x00 == ecall ; Groups: int
+
+!# issue 2007 RISCV64 instruction groups
+!# CS_ARCH_RISCV, CS_MODE_RISCV64, CS_OPT_DETAIL
+0xef,0x00,0x40,0x00 == jal 4 ; op_count: 1 ; operands[0].type: IMM = 0x4 ; Groups: call
+
+!# issue 2007 RISCV32 instruction groups
+!# CS_ARCH_RISCV, CS_MODE_RISCV32, CS_OPT_DETAIL
+0x63,0x04,0x03,0x00 == beqz t1, 8 ; op_count: 2 ; operands[0].type: REG = t1 ; operands[1].type: IMM = 0x8 ; Groups: branch_relative jump
+
+!# issue 2007 RISCV32 instruction groups
+!# CS_ARCH_RISCV, CS_MODE_RISCV32, CS_OPT_DETAIL
+0x73,0x00,0x00,0x00 == ecall ; Groups: int
+
+!# issue 2007 RISCV32 instruction groups
+!# CS_ARCH_RISCV, CS_MODE_RISCV32, CS_OPT_DETAIL
+0xef,0x00,0x40,0x00 == jal 4 ; op_count: 1 ; operands[0].type: IMM = 0x4 ; Groups: call
+
+!# issue 2007 RISCV32 instruction groups
+!# CS_ARCH_RISCV, CS_MODE_RISCV32 CS_MODE_RISCVC, CS_OPT_DETAIL
+0x11,0x20 == c.jal 4 ; op_count: 1 ; operands[0].type: IMM = 0x4 ; Groups: hasStdExtC isrv32 call
+
+!# issue 2007 RISCV32 instruction groups
+!# CS_ARCH_RISCV, CS_MODE_RISCV32 CS_MODE_RISCVC, CS_OPT_DETAIL
+0x91,0xc1 == c.beqz a1, 4 ; op_count: 2 ; operands[0].type: REG = a1 ; operands[1].type: IMM = 0x4 ; Groups: hasStdExtC branch_relative jump
+
+!# issue 1997 notrack jmp
+!# CS_ARCH_X86, CS_MODE_64, None
+0x3e,0xff,0xe0 == notrack jmp rax
+
+!# issue 1997 notrack call
+!# CS_ARCH_X86, CS_MODE_64, None
+0x3e,0xff,0xd0 == notrack call rax
+
 !# issue 1924 SME Index instruction alias printing is not always valid
 !# CS_ARCH_ARM64, CS_MODE_ARM, CS_OPT_DETAIL
 0x02,0x00,0x9f,0xe0 == ld1w	{za0h.s[w12, 2]}, p0/z, [x0] ; operands[0].type: REG = zas0 ; operands[0].index.base: REG = w12 ; operands[0].index.disp: 0x2 ; operands[1].type: REG = p0 ; operands[2].type: MEM ; operands[2].mem.base: REG = x0
