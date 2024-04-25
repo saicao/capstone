@@ -75,6 +75,8 @@ tests/test_bpf
 tests/test_sh
 tests/test_riscv
 tests/test_sh
+tests/test_alpha
+tests/test_hppa
 
 # regress binaries
 suite/regress/invalid_read_in_print_operand
@@ -144,3 +146,5 @@ android-ndk-*
 
 # Meson
 /subprojects/fadec/
+# Auto-sync files
+suite/auto-sync/src/autosync.egg-info

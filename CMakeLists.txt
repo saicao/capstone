@@ -54,6 +54,7 @@ option(CAPSTONE_BUILD_TESTS "Build tests" ${PROJECT_IS_TOP_LEVEL})
 option(CAPSTONE_BUILD_CSTOOL "Build cstool" ${PROJECT_IS_TOP_LEVEL})
 option(CAPSTONE_BUILD_CSTEST "Build cstest" OFF)
 option(CAPSTONE_USE_DEFAULT_ALLOC "Use default memory allocation functions" ON)
+option(CAPSTONE_USE_ARCH_REGISTRATION "Use explicit architecture registration" OFF)
 option(CAPSTONE_ARCHITECTURE_DEFAULT "Whether architectures are enabled by default" ON)
 option(CAPSTONE_DEBUG "Whether to enable extra debug assertions" OFF)
 option(CAPSTONE_INSTALL "Generate install target" ${PROJECT_IS_TOP_LEVEL})
@@ -63,8 +64,8 @@ if(APPLE AND NOT CAPSTONE_BUILD_MACOS_THIN)
     set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
 endif()
 
-set(SUPPORTED_ARCHITECTURES ARM AARCH64 M68K MIPS PPC SPARC SYSZ XCORE X86 TMS320C64X M680X EVM MOS65XX WASM BPF RISCV SH TRICORE ALPHA)
-set(SUPPORTED_ARCHITECTURE_LABELS ARM AARCH64 M68K MIPS PowerPC Sparc SystemZ XCore x86 TMS320C64x M680x EVM MOS65XX WASM BPF RISCV SH TriCore Alpha)
+set(SUPPORTED_ARCHITECTURES ARM AARCH64 M68K MIPS PPC SPARC SYSZ XCORE X86 TMS320C64X M680X EVM MOS65XX WASM BPF RISCV SH TRICORE ALPHA HPPA)
+set(SUPPORTED_ARCHITECTURE_LABELS ARM AARCH64 M68K MIPS PowerPC Sparc SystemZ XCore x86 TMS320C64x M680x EVM MOS65XX WASM BPF RISCV SH TriCore Alpha HPPA)
 
 list(LENGTH SUPPORTED_ARCHITECTURES count)
 math(EXPR count "${count}-1")
@@ -73,15 +74,6 @@ foreach(i RANGE ${count})
     list(GET SUPPORTED_ARCHITECTURES ${i} supported_architecture)
     list(GET SUPPORTED_ARCHITECTURE_LABELS ${i} supported_architecture_label)
     option("CAPSTONE_${supported_architecture}_SUPPORT" "${supported_architecture_label} support" ${CAPSTONE_ARCHITECTURE_DEFAULT})
-endforeach()
-
-# propagate architecture support variables to preprocessor
-foreach(supported_architecture ${SUPPORTED_ARCHITECTURES})
-    set(option_name "CAPSTONE_${supported_architecture}_SUPPORT")
-    if(${option_name})
-        message("Enabling ${option_name}")
-        add_definitions("-D${option_name}")
-    endif()
 endforeach()
 
 option(CAPSTONE_X86_REDUCE "x86 with reduce instruction sets to minimize library" OFF)
@@ -94,6 +86,19 @@ endif()
 
 if(CAPSTONE_USE_DEFAULT_ALLOC)
     add_definitions(-DCAPSTONE_USE_SYS_DYN_MEM)
+endif()
+
+if(CAPSTONE_USE_ARCH_REGISTRATION)
+    add_definitions(-DCAPSTONE_USE_ARCH_REGISTRATION)
+elseif(CAPSTONE_ARCHITECTURE_DEFAULT)
+    # propagate architecture support variables to preprocessor
+    foreach(supported_architecture ${SUPPORTED_ARCHITECTURES})
+        set(option_name "CAPSTONE_${supported_architecture}_SUPPORT")
+        if(${option_name})
+            message("Enabling ${option_name}")
+            add_definitions("-D${option_name}")
+        endif()
+    endforeach()
 endif()
 
 if(CAPSTONE_X86_REDUCE)
@@ -164,6 +169,7 @@ set(HEADERS_COMMON
     include/capstone/platform.h
     include/capstone/sh.h
     include/capstone/alpha.h
+    include/capstone/hppa.h
 )
 
 set(TEST_SOURCES test_basic.c test_detail.c test_skipdata.c test_iter.c)
@@ -612,6 +618,24 @@ if (CAPSTONE_ALPHA_SUPPORT)
     set(TEST_SOURCES ${TEST_SOURCES} test_alpha.c)
 endif ()
 
+if(CAPSTONE_HPPA_SUPPORT)
+    add_definitions(-DCAPSTONE_HAS_HPPA)
+    set(SOURCES_HPPA
+        arch/HPPA/HPPADisassembler.c
+        arch/HPPA/HPPAInstPrinter.c
+        arch/HPPA/HPPAMapping.c
+        arch/HPPA/HPPAModule.c
+    )
+    set(HEADERS_HPPA
+        arch/HPPA/HPPAConstants.h
+        arch/HPPA/HPPADisassembler.h
+        arch/HPPA/HPPAInstPrinter.h
+        arch/HPPA/HPPAMapping.h
+        arch/HPPA/HPPAModule.h
+    )
+    set(TEST_SOURCES ${TEST_SOURCES} test_hppa.c)
+endif()
+
 if (CAPSTONE_OSXKERNEL_SUPPORT)
     add_definitions(-DCAPSTONE_HAS_OSXKERNEL)
 endif()
@@ -637,6 +661,7 @@ set(ALL_SOURCES
     ${SOURCES_SH}
     ${SOURCES_TRICORE}
     ${SOURCES_ALPHA}
+    ${SOURCES_HPPA}
 )
 
 set(ALL_HEADERS
@@ -661,6 +686,7 @@ set(ALL_HEADERS
     ${HEADERS_SH}
     ${HEADERS_TRICORE}
     ${HEADERS_ALPHA}
+    ${HEADERS_HPPA}
 )
 
 ## properties
@@ -725,6 +751,7 @@ source_group("Source\\RISCV" FILES ${SOURCES_RISCV})
 source_group("Source\\SH" FILES ${SOURCES_SH})
 source_group("Source\\TriCore" FILES ${SOURCES_TRICORE})
 source_group("Source\\Alpha" FILES ${SOURCES_ALPHA})
+source_group("Source\\HPPA" FILES ${SOURCES_HPPA})
 
 source_group("Include\\Common" FILES ${HEADERS_COMMON})
 source_group("Include\\Engine" FILES ${HEADERS_ENGINE})
@@ -747,6 +774,7 @@ source_group("Include\\RISCV" FILES ${HEADERS_RISCV})
 source_group("Include\\SH" FILES ${HEADERS_SH})
 source_group("Include\\TriCore" FILES ${HEADERS_TRICORE})
 source_group("Include\\Alpha" FILES ${HEADERS_ALPHA})
+source_group("Include\\HPPA" FILES ${HEADERS_HPPA})
 
 ## installation
 if(CAPSTONE_INSTALL)
