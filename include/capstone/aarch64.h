@@ -1919,7 +1919,7 @@ typedef enum {
 
 	// clang-format on
 	// generated content <AArch64GenCSSystemOperandsEnum.inc:GET_ENUM_VALUES_SysReg> end
-	AArch64_SYSREG_ENDING = UINT16_MAX,
+	AArch64_SYSREG_ENDING = 65535,
 } aarch64_sysreg;
 
 typedef enum {
