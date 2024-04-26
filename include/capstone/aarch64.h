@@ -11,7 +11,7 @@ extern "C" {
 #include "cs_operand.h"
 #include "platform.h"
 
-#include <assert.h>
+// #include <assert.h>
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4201)
@@ -111,7 +111,7 @@ inline static const char *AArch64CC_getCondCodeName(AArch64CC_CondCode Code)
 {
 	switch (Code) {
 	default:
-		assert(0 && "Unknown condition code");
+		// assert(0 && "Unknown condition code");
 	case AArch64CC_EQ:
 		return "eq";
 	case AArch64CC_NE:
@@ -164,7 +164,7 @@ inline static unsigned AArch64CC_getNZCVToSatisfyCondCode(AArch64CC_CondCode Cod
 	enum { N = 8, Z = 4, C = 2, V = 1 };
 	switch (Code) {
 	default:
-		assert(0 && "Unknown condition code");
+		// assert(0 && "Unknown condition code");
 	case AArch64CC_EQ:
 		return Z; // Z == 1
 	case AArch64CC_NE:
