@@ -19,6 +19,7 @@ sources = [
   'cstool_wasm.c',
   'cstool_x86.c',
   'cstool_xcore.c',
+  'cstool_hppa.c',
   'getopt.c',
 ]
 
