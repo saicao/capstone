@@ -25,6 +25,7 @@ available_archs = {
   'wasm': ['WASM', ['WASMDisassembler.c', 'WASMInstPrinter.c', 'WASMMapping.c', 'WASMModule.c']],
   'x86': ['X86', ['X86ATTInstPrinter.c', 'X86Disassembler.c', 'X86DisassemblerDecoder.c', 'X86InstPrinterCommon.c', 'X86IntelInstPrinter.c', 'X86Mapping.c', 'X86Module.c']],
   'xcore': ['XCore', ['XCoreDisassembler.c', 'XCoreInstPrinter.c', 'XCoreMapping.c', 'XCoreModule.c']],
+  'hppa': ['HPPA', ['HPPADisassembler.c', 'HPPAInstPrinter.c', 'HPPAMapping.c','HPPAModule.c']],
 }
 
 desired_archs = get_option('archs')
@@ -56,6 +57,7 @@ header_names = [
   'wasm.h',
   'x86.h',
   'xcore.h',
+  'hppa.h'
 ]
 foreach name : header_names
   headers += 'include' / 'capstone' / name
